@@ -1,0 +1,13 @@
+# yamllint configuration — referenced explicitly by the pre-commit hook
+# (args: [-c, .config/yamllint.yaml, --strict]). Migrated from the former
+# root .yamllint.
+extends: default
+
+rules:
+  document-start: disable
+  new-lines: disable
+  truthy:
+    check-keys: false
+  line-length: disable
+  comments:
+    min-spaces-from-content: 1

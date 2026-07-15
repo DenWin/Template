@@ -1,0 +1,6 @@
+asciidoctor
+markdownlint
+yamllint
+pre-commit
+PSScriptAnalyzer
+Pester

@@ -1,0 +1,10 @@
+# Vale hook FRAGMENT — inert. To activate, paste this block into the `repos:`
+# list of /.pre-commit-config.yaml, then run `vale sync` once to fetch styles.
+# verify: confirm the hook id/rev against the current errata-ai/vale release.
+- repo: https://github.com/errata-ai/vale
+  rev: v3.4.2 # verify / autoupdate
+  hooks:
+    - id: vale
+      args: [--config, .config/overlays/vale/vale.ini]
+      types: [text]
+      files: \.(md|adoc|asciidoc)$

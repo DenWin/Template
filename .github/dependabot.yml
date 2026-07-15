@@ -1,0 +1,16 @@
+# Dependabot — scheduled, GitHub-hosted service (not a workflow, not push-driven).
+# Scope is deliberately narrow: the only ecosystem in this template it can
+# maintain is GitHub Actions versions. pre-commit hook pins are updated by
+# `pre-commit autoupdate`; PowerShell/npm deps are handled elsewhere.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: ci
+    # Bundle all action bumps into a single monthly PR.
+    groups:
+      actions:
+        patterns: ["*"]

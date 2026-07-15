@@ -1,0 +1,111 @@
+# pre-commit — the single runner shared by local hooks and CI.
+# Setup and rationale: .config/README.md
+#
+#   pre-commit install        # register commit + push hooks
+#   pre-commit run --all-files
+#
+# rev: values are placeholders — run `pre-commit autoupdate` to pin.
+
+minimum_pre_commit_version: "3.5.0"
+
+default_install_hook_types: [pre-commit, pre-push]
+
+exclude: |
+  (?x)^(
+    (\.temp|\.history)/.*
+  )$
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md] # keep hard line breaks in *.md
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+        args: [--fix=lf]
+      - id: check-merge-conflict
+      - id: check-json
+        exclude: ^\.vscode/ # VS Code configs are JSONC (comments), not strict JSON
+      - id: check-yaml
+        args: [--allow-multiple-documents]
+
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.38.0
+    hooks:
+      - id: yamllint
+        args: [-c, .config/yamllint.yaml, --strict]
+
+  - repo: https://github.com/DavidAnson/markdownlint-cli2
+    rev: v0.23.0
+    hooks:
+      - id: markdownlint-cli2 # config sets fix:true -> auto-aligns tables
+        additional_dependencies: [markdownlint-rule-table-format]
+        args: [--config, .config/markdownlint-cli2.jsonc]
+
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.11.0.1
+    hooks:
+      - id: shellcheck
+
+  - repo: https://github.com/scop/pre-commit-shfmt # verify source on first fetch
+    rev: v3.13.1-1
+    hooks:
+      - id: shfmt
+        args: [-w, -i, "2"]
+
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.7.12
+    hooks:
+      - id: actionlint
+
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.0
+    hooks:
+      - id: gitleaks
+
+  # Local pwsh hooks — no native pre-commit backend. Same scripts CI runs.
+  # Test lanes select tagged *.Tests.ps1 by -Lane and no-op when there are none.
+  - repo: local
+    hooks:
+      - id: asciidoctor-validate
+        name: asciidoctor syntax validation
+        entry: pwsh -NoProfile -File .config/scripts/Test-AsciiDoc.ps1
+        language: system
+        files: \.(adoc|asciidoc)$
+
+      - id: jsonc-validate
+        name: JSONC validation
+        entry: pwsh -NoProfile -File .config/scripts/Test-Jsonc.ps1
+        language: system
+        files: (\.jsonc$|^\.vscode/.*\.json$)
+
+      - id: psscriptanalyzer
+        name: PSScriptAnalyzer
+        entry: pwsh -NoProfile -File .config/scripts/Test-PowerShellScript.ps1
+        language: system
+        files: \.(ps1|psm1|psd1)$
+
+      - id: test-fast
+        name: tests (fast lane)
+        entry: pwsh -NoProfile -File .config/scripts/Invoke-TestLane.ps1 -Lane Fast
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+
+      - id: test-standard
+        name: tests (standard lane)
+        entry: pwsh -NoProfile -File .config/scripts/Invoke-TestLane.ps1 -Lane Standard
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]
+
+      - id: test-thorough
+        name: tests (thorough lane)
+        entry: pwsh -NoProfile -File .config/scripts/Invoke-TestLane.ps1 -Lane Thorough
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [manual]

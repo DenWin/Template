@@ -1,0 +1,20 @@
+# ============================================================================
+# .gitignore — template baseline. Project-specific ignores go at the bottom.
+# ============================================================================
+
+# --- OS cruft -----------------------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Editor state -------------------------------------------------------------
+# Ignore personal editor config, but KEEP the shipped tooling files.
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+
+# --- transient work (kept out of tracking for now) ----------------------------
+.temp/
+.history/
+
+# --- Project-specific (add below) ---------------------------------------------

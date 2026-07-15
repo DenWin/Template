@@ -1,0 +1,31 @@
+{
+  // ==========================================================================
+  // Tooling-only workspace settings shipped with the template. Keep this file
+  // strictly about wiring linters to .config/ — no personal prefs (theme,
+  // fonts). The project extends it freely; .gitignore keeps it tracked while
+  // ignoring the rest of .vscode/.
+  // ==========================================================================
+
+  // Live markdown linting uses the SAME rules the commit hook enforces.
+  // (Table auto-format + custom rule run at commit, not in-editor.)
+  "markdownlint.config": { "extends": ".config/markdownlint.jsonc" },
+
+  // Honour .editorconfig intent for files VS Code creates/saves.
+  "files.eol": "\n",
+  "files.insertFinalNewline": true,
+  "files.trimTrailingWhitespace": true,
+  "[markdown]": {
+    // Trailing spaces are significant in Markdown (hard line breaks).
+    "files.trimTrailingWhitespace": false
+  },
+
+  // Don't let an editor formatter fight the linters; formatting is a commit
+  // concern here (markdownlint --fix, shfmt).
+  "editor.formatOnSave": false,
+  "cSpell.words": [
+    "asciidoctor",
+    "claudeignore",
+    "parseability",
+    "psscriptanalyzer"
+  ]
+}

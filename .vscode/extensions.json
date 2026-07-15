@@ -1,0 +1,13 @@
+{
+  // Recommended extensions so the linters that run at commit also surface
+  // live in the editor. VS Code prompts contributors to install these.
+  "recommendations": [
+    "editorconfig.editorconfig", // .editorconfig support
+    "davidanson.vscode-markdownlint", // markdown lint (reads .config/markdownlint.jsonc)
+    "redhat.vscode-yaml", // YAML schema/validation
+    "ms-vscode.powershell", // PowerShell + PSScriptAnalyzer
+    "asciidoctor.asciidoctor-vscode", // AsciiDoc preview/validation
+    "timonwong.shellcheck", // shellcheck for shell scripts
+    "mkhl.shfmt" // shfmt formatting
+  ]
+}

@@ -1,0 +1,4 @@
+# Normalize every text file to LF, in the repo and on checkout.
+# Matches GitHub storage and .editorconfig (end_of_line = lf).
+# Binary files are auto-detected and left untouched.
+* text=auto eol=lf

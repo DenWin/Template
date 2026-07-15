@@ -1,0 +1,22 @@
+// Markdown LINT rules — the single source of truth, shared by:
+//   * .config/markdownlint-cli2.jsonc  (the pre-commit / CI hook)
+//   * .vscode/settings.json            (live editor linting)
+// Kept as a plain markdownlint rules object so both can `extends` it.
+{
+  "default": true,
+
+  // Long lines are fine in prose/tables.
+  "MD013": false,
+  // Allow inline HTML.
+  "MD033": false,
+  // First line need not be a top-level heading.
+  "MD041": false,
+
+  // Emphasis / strong markers: asterisk (deliberate preference; the table
+  // formatter never touches emphasis, so there is no underscore conflict).
+  "MD049": { "style": "asterisk" },
+  "MD050": { "style": "asterisk" },
+
+  // Table column style: vertically aligned pipes.
+  "MD060": { "style": "aligned" }
+}

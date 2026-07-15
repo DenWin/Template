@@ -1,0 +1,97 @@
+name: lint
+
+# The CI half of the "same checks, both places" contract: this runs the exact
+# same pre-commit hooks a developer runs locally. No bespoke lint logic here.
+#
+# Two cadences:
+#   * pull_request      -> SCOPED to the PR diff (fast feedback, fewer minutes)
+#   * merge_group/push  -> FULL set (every file + every test lane) as the gate
+#
+# For the full set to gate a merge, enable the repo's MERGE QUEUE and mark this
+# workflow a required status check (Settings -> Branches -> branch protection ->
+# "Require merge queue"). Then merge_group runs the full set on the queued
+# commit BEFORE it reaches main.
+on:
+  pull_request:
+  merge_group:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: lint # stable status-check name (used by the merge-queue ruleset)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history so diff-range, gitleaks and actionlint see everything.
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install pre-commit
+        run: pip install pre-commit
+
+      # pwsh is preinstalled on ubuntu runners; add the modules the local hooks need.
+      - name: Install PowerShell modules
+        shell: pwsh
+        run: |
+          Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+          Install-Module PSScriptAnalyzer -MinimumVersion 1.21.0 -Scope CurrentUser -Force
+          Install-Module Pester -MinimumVersion 5.5.0 -Scope CurrentUser -Force
+
+      # asciidoctor (Ruby) backs Test-AsciiDoc.ps1; Ruby is preinstalled.
+      - name: Install asciidoctor
+        run: sudo gem install asciidoctor --no-document
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
+
+      # -- Pull request: scoped to the changed files -------------------------
+      # File-scoped linters run only over the PR diff; the test hooks are
+      # always_run, so the fast lane still runs in full.
+      - name: pre-commit (scoped to PR diff)
+        if: github.event_name == 'pull_request'
+        run: >
+          pre-commit run
+          --from-ref "${{ github.event.pull_request.base.sha }}"
+          --to-ref "${{ github.event.pull_request.head.sha }}"
+          --show-diff-on-failure
+
+      # -- Merge gate / main: the full set -----------------------------------
+      # Every file, every lane. Standard/thorough lanes are dormant until their
+      # hooks are enabled; this already invokes their stages so it scales.
+      - name: pre-commit (full — merge/main gate)
+        if: github.event_name != 'pull_request'
+        run: |
+          pre-commit run --all-files --show-diff-on-failure
+          pre-commit run --all-files --hook-stage pre-push --show-diff-on-failure
+          pre-commit run --all-files --hook-stage manual --show-diff-on-failure
+
+  # Informational spell-check. NOT a required check and continue-on-error, so it
+  # surfaces typos in the log without ever gating a merge.
+  spelling:
+    name: spelling (notice)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: codespell
+        run: |
+          pip install codespell
+          codespell --skip=".git,.temp,.history,*.sqlite" \
+            --ignore-words=.config/codespell-ignore.txt .

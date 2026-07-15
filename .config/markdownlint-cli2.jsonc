@@ -1,0 +1,21 @@
+// markdownlint-cli2 configuration — referenced by the pre-commit hook
+// (args: [--config, .config/markdownlint-cli2.jsonc]).
+//
+// Division of labour:
+//   * LINT rules live in ./markdownlint.jsonc (shared with the VS Code
+//     extension via `extends`, so editor and commit agree).
+//   * markdownlint-rule-table-format FORMATS GFM tables (parser-based, so it
+//     correctly ignores tables inside code fences). Applied on `--fix`.
+//   * Emphasis stays asterisk — the table rule only touches tables.
+{
+  "config": { "extends": "./markdownlint.jsonc" },
+
+  // Third-party rule — vet its maintenance before relying on it everywhere.
+  // verify: confirm the exact option key/version against the rule's README.
+  "customRules": ["markdownlint-rule-table-format"],
+
+  // Auto-fix fixable violations (incl. table formatting) on the -fix hook.
+  "fix": true,
+
+  "ignores": [".temp/**", ".history/**"]
+}
