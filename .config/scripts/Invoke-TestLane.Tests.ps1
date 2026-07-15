@@ -9,7 +9,7 @@ BeforeAll {
 
     # Copy the script into an isolated fake repo so its repo-root scan
     # ($PSScriptRoot/../..) sees only what the test sets up — never the real repo.
-    function New-IsolatedScript {
+    function Get-IsolatedScript {
         $root = Join-Path $TestDrive ([guid]::NewGuid().ToString('N'))
         $dir = Join-Path $root '.config/scripts'
         New-Item -ItemType Directory -Path $dir -Force | Out-Null
@@ -27,12 +27,12 @@ Describe 'Invoke-TestLane' -Tag 'Fast' {
 
 Describe 'Invoke-TestLane (isolated)' -Tag 'Standard' {
     It 'no-ops (exit 0) when the repo has no tests' {
-        $iso = New-IsolatedScript
+        $iso = Get-IsolatedScript
         Invoke-ScriptFile -Path $iso.Script -Arguments @('-Lane', 'Fast') | Should -Be 0
     }
 
     It 'exits 0 for a passing tagged test' -Skip:(-not $HasPester) {
-        $iso = New-IsolatedScript
+        $iso = Get-IsolatedScript
         $testsDir = Join-Path $iso.Root 'tests'
         New-Item -ItemType Directory -Path $testsDir -Force | Out-Null
         "Describe 'x' -Tag 'Fast' { It 'passes' { 1 | Should -Be 1 } }" |
@@ -41,7 +41,7 @@ Describe 'Invoke-TestLane (isolated)' -Tag 'Standard' {
     }
 
     It 'exits non-zero for a failing tagged test' -Skip:(-not $HasPester) {
-        $iso = New-IsolatedScript
+        $iso = Get-IsolatedScript
         $testsDir = Join-Path $iso.Root 'tests'
         New-Item -ItemType Directory -Path $testsDir -Force | Out-Null
         "Describe 'x' -Tag 'Fast' { It 'fails' { 1 | Should -Be 2 } }" |
