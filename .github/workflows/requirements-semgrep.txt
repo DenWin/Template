@@ -1,2 +1,0 @@
-# Pin for the scheduled semgrep workflow; updated by Dependabot (pip ecosystem).
-semgrep==1.170.0

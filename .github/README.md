@@ -68,11 +68,9 @@ is mandatory: a PR must carry proof it was validated (CI run, `pre-commit run
 
 ## `dependabot.yml`
 
-A scheduled, GitHub-hosted service (not a workflow, not push-driven). Two
-ecosystems: **GitHub Actions versions** (`github-actions`, monthly) and the
-**pip pin** in `workflows/requirements-semgrep.txt` (which also mirrors the
-semgrep hook's `additional_dependencies` pin in `.pre-commit-config.yaml` —
-bump that one manually alongside). Other pre-commit hook pins are updated by
-`pre-commit autoupdate`; PowerShell deps are handled elsewhere.
+A scheduled, GitHub-hosted service (not a workflow, not push-driven). Its scope
+is deliberately narrow — the only ecosystem in this template it can maintain is
+**GitHub Actions versions** (`github-actions`, monthly). pre-commit hook pins are
+updated by `pre-commit autoupdate`; PowerShell/npm deps are handled elsewhere.
 A 7-day `cooldown` delays adopting a just-published version, leaving a window for
 a compromised or yanked release to be caught upstream.

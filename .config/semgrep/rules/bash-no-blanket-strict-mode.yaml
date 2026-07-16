@@ -1,0 +1,17 @@
+# Bash: shellcheck (already a pre-commit hook) covers most bash mechanics — quoting,
+# `read` safety, `$()` over backticks, array iteration. This rule covers a
+# STYLE choice shellcheck has no opinion on.
+rules:
+  - id: no-blanket-strict-mode
+    languages: [bash]
+    severity: WARNING # weight only — every finding blocks (hook runs with --error)
+    message: >
+      Blanket `set -e`/`set -euo pipefail` masks which command failed and
+      breaks legitimate non-zero control flow (e.g. `grep` finding nothing).
+      Prefer explicit failure handling: capture exit codes, branch expected
+      non-zero paths, check PIPESTATUS after pipelines.
+    pattern-either:
+      - pattern: set -e
+      - pattern: set -eu
+      - pattern: set -euo pipefail
+      - pattern: set -o errexit

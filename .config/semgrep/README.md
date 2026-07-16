@@ -1,36 +1,34 @@
 # Semgrep policy rules
 
 Project-specific policy checks — patterns a code generator repeatedly gets
-wrong, or house style the standard linters cannot express. Semgrep matches code
-*structure* (not regex text) across many languages from one rule DSL; each rule
-declares its `languages:`, and files are matched by extension — no per-language
-setup.
+wrong, or house style the standard linters cannot express. These rule files are
+tracked, real, and verified — but **nothing runs them by default**. Wiring
+semgrep into pre-commit is opt-in: see
+[`.config/overlays/semgrep/README.md`](../overlays/semgrep/README.md) to
+activate.
 
-Two semgrep surfaces exist, with different jobs:
+Scope boundaries: PowerShell parses but its rules are **Pro-gated** (free-tier
+CLI silently skips them — see
+[`../overlays/semgrep-pro/README.md`](../overlays/semgrep-pro/README.md)
+before assuming a `languages: [powershell]` rule here does anything). SQL has
+no semgrep support at any tier. pwsh policies live in
+[`../PSScriptAnalyzerRules/`](../PSScriptAnalyzerRules/) instead — that
+mechanism is active in the base template today. Secrets are gitleaks; workflow
+security is zizmor.
 
-- **Pre-commit hook (this folder):** every rule in [`rules/`](rules/) runs on
-  changed files at commit time and in CI, via the `semgrep` hook in
-  [`/.pre-commit-config.yaml`](../../.pre-commit-config.yaml). The hook passes
-  `--error`, so **any** finding blocks, regardless of `severity` — a rule in
-  `rules/` is a gate by definition; severity is documentation of weight.
-- **Monthly registry scan:** Semgrep's curated community rules (`p/default`)
-  run over the whole repo in
-  [`semgrep-scheduled.yml`](../../.github/workflows/semgrep-scheduled.yml) —
-  informational only, never gates.
+## Rules shipped here
 
-Scope boundaries: PowerShell is not semgrep-supported — pwsh policies live in
-[`../PSScriptAnalyzerRules/`](../PSScriptAnalyzerRules/) instead. Secrets are
-gitleaks; workflow security is zizmor.
+- [`rules/python-no-silently-swallowed-exception.yaml`](rules/python-no-silently-swallowed-exception.yaml) —
+  Python, empty-except swallowing.
+- [`rules/bash-no-blanket-strict-mode.yaml`](rules/bash-no-blanket-strict-mode.yaml) —
+  bash, flags blanket `set -e`/`set -euo pipefail` (shellcheck, the base-template
+  bash linter, has no opinion on this — it's a style choice, not a mechanic).
 
-## Write a rule
-
-One rule per concern, in its own file under `rules/`. Start from the annotated
-[`rules/example.yaml`](rules/example.yaml); syntax reference:
-<https://semgrep.dev/docs/writing-rules/rule-syntax>. Tune a rule *before*
-adding it (see the test command below) — once in `rules/`, it blocks commits.
-
-Test a rule locally without committing:
+Both are verified: run against a violating and a clean sample file through the
+real hook before being added. Test a rule the same way:
 
 ```pwsh
 semgrep scan --config .config/semgrep/rules --metrics=off <file-or-dir>
 ```
+
+Syntax reference: <https://semgrep.dev/docs/writing-rules/rule-syntax>.
