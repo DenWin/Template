@@ -16,14 +16,23 @@
 
 .PARAMETER MergeMethod
     How the merge queue merges entries.
+
+.PARAMETER WithStrictLayer
+    Also create a second, admin-exempt ruleset: 1 approval from a code owner,
+    given after the last push, stale approvals dismissed. Use once a second
+    identity (e.g. an AI-maintainer App/PAT) opens PRs — until then the layer
+    binds nobody.
 #>
 [CmdletBinding()]
 param(
     [string]$CheckName = 'lint',
     [int]$RequiredApprovals = 0,
     [ValidateSet('MERGE', 'SQUASH', 'REBASE')]
-    [string]$MergeMethod = 'SQUASH'
+    [string]$MergeMethod = 'SQUASH',
+    [switch]$WithStrictLayer
 )
+
+Set-StrictMode -Version Latest
 
 function Test-GhCli { [bool](Get-Command gh -ErrorAction SilentlyContinue) }
 
@@ -49,7 +58,9 @@ function Get-ProtectionRuleset {
                     dismiss_stale_reviews_on_push     = $false
                     require_code_owner_review         = $false
                     require_last_push_approval        = $false
-                    required_review_thread_resolution = $false
+                    # Unresolved review threads block the merge — with auto-merge
+                    # on, a review comment holds an agent PR until it is resolved.
+                    required_review_thread_resolution = $true
                 }
             }
             @{
@@ -75,11 +86,52 @@ function Get-ProtectionRuleset {
     }
 }
 
+function Get-StrictLayerRuleset {
+    <# Build the second, admin-exempt ruleset (pure; no side effects).
+       Layered on top of main-protection: rulesets aggregate most-restrictive,
+       so everyone EXCEPT the exempt repo admin additionally needs one approval
+       from a code owner, given after the last push. Run only once a second
+       identity (e.g. an AI-maintainer App/PAT) exists — with no other identity,
+       this layer binds nobody. #>
+    @{
+        name          = 'main-protection-strict'
+        target        = 'branch'
+        enforcement   = 'active'
+        conditions    = @{ ref_name = @{ include = @('~DEFAULT_BRANCH'); exclude = @() } }
+        # actor_id 5 = Repository admin role; 'exempt' removes these rules for it.
+        bypass_actors = @(@{ actor_id = 5; actor_type = 'RepositoryRole'; bypass_mode = 'exempt' })
+        rules         = @(
+            @{
+                type       = 'pull_request'
+                parameters = @{
+                    required_approving_review_count   = 1
+                    require_code_owner_review         = $true
+                    require_last_push_approval        = $true
+                    dismiss_stale_reviews_on_push     = $true
+                    required_review_thread_resolution = $true
+                }
+            }
+        )
+    }
+}
+
+function Get-MergeFlowSetting {
+    <# Repo-level merge-flow settings (pure; no side effects).
+       All three merge methods stay enabled: the merge queue already enforces
+       $MergeMethod for the gated path, and a ruleset cannot re-enable a method
+       disabled repo-wide — disabling here would also bind bypass actors. #>
+    @{
+        allow_auto_merge       = $true  # `gh pr merge --auto` queues on green checks
+        delete_branch_on_merge = $true
+    }
+}
+
 function Invoke-BranchProtection {
     param(
         [Parameter(Mandatory)][string]$CheckName,
         [Parameter(Mandatory)][int]$RequiredApprovals,
-        [Parameter(Mandatory)][string]$MergeMethod
+        [Parameter(Mandatory)][string]$MergeMethod,
+        [switch]$WithStrictLayer
     )
 
     # Return codes are the contract; keep Write-Error non-terminating.
@@ -104,11 +156,25 @@ function Invoke-BranchProtection {
         return 1
     }
 
-    Write-Information "Branch protection active on $repo (default branch)." -InformationAction Continue
+    if ($WithStrictLayer) {
+        (Get-StrictLayerRuleset | ConvertTo-Json -Depth 8) | gh api --method POST "repos/$repo/rulesets" --input -
+        if ($LASTEXITCODE -ne 0) {
+            Write-Error 'Base ruleset created, but the strict layer failed (it may already exist).'
+            return 1
+        }
+    }
+
+    (Get-MergeFlowSetting | ConvertTo-Json) | gh api --method PATCH "repos/$repo" --input - | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error 'Ruleset created, but setting auto-merge/branch-cleanup failed.'
+        return 1
+    }
+
+    Write-Information "Branch protection + merge flow active on $repo (default branch)." -InformationAction Continue
     return 0
 }
 
 # Execute only when run directly, not when dot-sourced by a test.
 if ($MyInvocation.InvocationName -ne '.') {
-    exit (Invoke-BranchProtection -CheckName $CheckName -RequiredApprovals $RequiredApprovals -MergeMethod $MergeMethod)
+    exit (Invoke-BranchProtection -CheckName $CheckName -RequiredApprovals $RequiredApprovals -MergeMethod $MergeMethod -WithStrictLayer:$WithStrictLayer)
 }

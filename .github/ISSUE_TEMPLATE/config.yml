@@ -1,0 +1,3 @@
+# Issue chooser config. blank_issues_enabled:false forces contributors (and AI
+# maintainers via `gh issue create --template`) through a structured form.
+blank_issues_enabled: false

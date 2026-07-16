@@ -1,0 +1,155 @@
+= AI Maintainer Identity — setup knowledge base
+:toc: macro
+:toclevels: 3
+:icons: font
+
+One-time reference for giving each AI maintainer (Codex, Claude, Copilot, …) its
+*own least-privilege identity*, so agent actions are attributable and an agent
+*cannot* weaken the repo's protection. Read once, set up once; this file can be
+deleted with the rest of `setup/` afterwards (keep a copy if you want the
+reference).
+
+toc::[]
+
+== Why
+
+When an agent runs under *your* authenticated `gh`, it inherits *your*
+privileges — including admin. Two problems follow:
+
+* *No attribution.* The audit log cannot tell an agent's commit, branch, or API
+  call apart from yours.
+* *No containment.* With admin, an agent can disable the branch ruleset, delete
+  protected branches, or rewrite history — with a single command, by accident or
+  through prompt injection.
+
+The fix is not a cleverer ruleset. It is *identity + least privilege*:
+
+. Each agent acts under its own identity with *write, never admin*.
+. Your admin identity becomes *break-glass only* — used deliberately, rarely,
+  and never handed to an agent.
+
+With that in place, the branch ruleset (`Protect-MainBranch.ps1`) is enforced
+*against the agents*, and `CODEOWNERS` can require your review on the control
+surfaces while routine agent PRs flow through CI + auto-merge.
+
+== Choose a mechanism
+
+[cols="1,3,3",options="header"]
+|===
+| | GitHub App (recommended) | Fine-grained PAT
+
+| What it is
+| An installable app whose installation token acts as a bot identity
+  (`your-app[bot]`).
+| A scoped personal access token owned by you or a dedicated bot account.
+
+| Attribution
+| Commits/PRs show the app's bot identity — clearly non-human.
+| Commits show the token owner. Use a *separate bot account* for a clean identity.
+
+| Privilege
+| Per-permission (Contents: RW, Pull requests: RW, Administration: none).
+| Per-permission, but *repository-scoped*; still no admin.
+
+| Revocation / rotation
+| Uninstall or roll the key; short-lived installation tokens (1 h).
+| Revoke/rotate the token; you manage expiry.
+
+| Setup cost
+| Higher (create app, install, mint installation tokens).
+| Lower (one token), but weaker identity separation.
+
+| Best when
+| You want durable, auditable, revocable automation identities.
+| You want the quickest path and accept token management.
+|===
+
+Recommendation: *GitHub App* for durable agents; a *fine-grained PAT on a bot
+account* if you want to move fast today. Never use a classic (non-fine-grained)
+PAT, and never grant `Administration`.
+
+== Option A — GitHub App
+
+=== Create
+
+. *Settings → Developer settings → GitHub Apps → New GitHub App.*
+. Name it per agent or one shared maintainer app (e.g. `denwin-ai-maintainer`).
+. *Repository permissions* — grant only:
++
+[cols="1,1",options="header"]
+|===
+| Permission | Access
+| Contents | Read and write
+| Pull requests | Read and write
+| Metadata | Read-only (mandatory)
+|===
++
+Leave *Administration*, *Workflows*, *Secrets*, and everything else at *No
+access*. Granting `Workflows` would let an agent edit `.github/workflows/` —
+keep that behind `CODEOWNERS` review instead.
+. Uncheck *Webhook → Active* (not needed for a maintainer bot).
+. Create, then *generate a private key* and store it in your secret manager.
+
+=== Install
+
+. *Install App* → select this repository only (not "All repositories").
+. Note the *App ID* and the *Installation ID*.
+
+=== Use from an agent
+
+An App authenticates as itself (JWT), then exchanges that for a short-lived
+*installation access token*. The simplest path is the `gh` token helper or the
+`actions/create-github-app-token` action in CI. Locally:
+
+[source,bash]
+----
+# Mint an installation token (expires in ~1 hour), then point git/gh at it.
+# Use a helper such as `gh-token` or a small script signing a JWT with the
+# app private key; store the result in GH_TOKEN for the agent's shell only.
+export GH_TOKEN="<installation-access-token>"
+git -c user.name="denwin-ai-maintainer[bot]" \
+    -c user.email="<app-id>+denwin-ai-maintainer[bot]@users.noreply.github.com" \
+    commit -m "…"
+----
+
+Give the agent a shell where `GH_TOKEN` is the installation token — separate from
+your personal `gh auth login` session.
+
+== Option B — Fine-grained PAT
+
+. Create (or reuse) a dedicated *bot GitHub account*; add it as a repository
+  *collaborator with Write* (not Admin).
+. As that account: *Settings → Developer settings → Fine-grained tokens →
+  Generate new token.*
+. *Resource owner* = you; *Repository access* = only this repo.
+. *Permissions* — Contents: Read and write; Pull requests: Read and write;
+  Metadata: Read-only. Nothing else. No Administration.
+. Set a short expiry and calendar a rotation.
+. Configure the agent's git/`gh` to use that token and the bot account's
+  `user.name`/`user.email`.
+
+== Harden further (optional)
+
+* *Require signed commits* — add the `required_signatures` rule to the branch
+  ruleset so only verified identities' commits are accepted. GitHub Apps sign
+  automatically; a bot account needs a GPG/SSH signing key.
+* *Restrict who can push to `main`* — with a PR-only ruleset and no bypass
+  actors, no identity (including yours) pushes directly; break-glass is a
+  deliberate, logged admin action.
+* *Scope secrets* — never expose repo/org secrets to agent-triggered workflows
+  you would not trust the agent to read.
+
+== Interim posture (until identities exist)
+
+Until the above is in place, an agent in your `gh` session has your privileges.
+Mitigate by convention:
+
+* Run admin/ruleset operations (`Protect-MainBranch.ps1`, `Enable-RepoSecurity.ps1`)
+  *yourself*, not via an agent.
+* Keep agents to branch/commit/PR work; do not ask them to change protection.
+
+== See also
+
+* `setup/Protect-MainBranch.ps1` — the branch ruleset the identities are enforced against.
+* `setup/Enable-RepoSecurity.ps1` — server-side security toggles.
+* `.github/CODEOWNERS` — the control surfaces that require owner review.

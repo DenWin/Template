@@ -18,6 +18,7 @@ param(
     [string[]]$Path
 )
 
+Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 if (-not $Path -or $Path.Count -eq 0) {
@@ -39,9 +40,15 @@ Import-Module PSScriptAnalyzer -ErrorAction Stop
 $settingsPath = Join-Path $PSScriptRoot '..' 'PSScriptAnalyzerSettings.psd1' |
     Resolve-Path | Select-Object -ExpandProperty Path
 
+# Custom rules live beside the settings. Pass the module explicitly (absolute) so
+# resolution is independent of the caller's working directory; -Settings still
+# governs severity and IncludeDefaultRules.
+$customRulePath = Join-Path $PSScriptRoot '..' 'PSScriptAnalyzerRules' 'Measure-RequireStrictMode.psm1' |
+    Resolve-Path | Select-Object -ExpandProperty Path
+
 $findings = foreach ($file in $Path) {
     if (-not (Test-Path -LiteralPath $file)) { continue }
-    Invoke-ScriptAnalyzer -Path $file -Settings $settingsPath
+    Invoke-ScriptAnalyzer -Path $file -Settings $settingsPath -CustomRulePath $customRulePath
 }
 
 if ($findings) {

@@ -15,6 +15,7 @@ param(
     [string[]]$Path
 )
 
+Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 if (-not $Path -or $Path.Count -eq 0) { Write-Verbose 'No JSONC files.'; exit 0 }

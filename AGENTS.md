@@ -16,15 +16,16 @@ PRs, full at the merge gate.
 
 ## Mechanism map
 
-| Mechanism           | Where                            | Doc                                                                  |
-| ------------------- | -------------------------------- | -------------------------------------------------------------------- |
-| Orchestration       | `.pre-commit-config.yaml` (root) | this file + inline comments                                          |
-| Configs             | `.config/`                       | [`.config/README.md`](.config/README.md)                             |
-| Linting & testing   | `.config/scripts/`               | [`.config/scripts/README.md`](.config/scripts/README.md)             |
-| CI & automation     | `.github/`                       | [`.github/README.md`](.github/README.md)                             |
-| Editor integration  | `.vscode/`                       | [`.vscode/README.md`](.vscode/README.md)                             |
-| Opt-in tooling      | `.config/overlays/`              | [`.config/overlays/vale/README.md`](.config/overlays/vale/README.md) |
-| One-time repo setup | `setup/` (delete after use)      | [`setup/README.md`](setup/README.md)                                 |
+| Mechanism           | Where                                                | Doc                                                                  |
+| ------------------- | ---------------------------------------------------- | -------------------------------------------------------------------- |
+| Orchestration       | `.pre-commit-config.yaml` (root)                     | this file + inline comments                                          |
+| Configs             | `.config/`                                           | [`.config/README.md`](.config/README.md)                             |
+| Linting & testing   | `.config/scripts/`                                   | [`.config/scripts/README.md`](.config/scripts/README.md)             |
+| CI & automation     | `.github/`                                           | [`.github/README.md`](.github/README.md)                             |
+| Editor integration  | `.vscode/`                                           | [`.vscode/README.md`](.vscode/README.md)                             |
+| Policy rules        | `.config/semgrep/`, `.config/PSScriptAnalyzerRules/` | [`.config/semgrep/README.md`](.config/semgrep/README.md)             |
+| Opt-in tooling      | `.config/overlays/`                                  | [`.config/overlays/vale/README.md`](.config/overlays/vale/README.md) |
+| One-time repo setup | `setup/` (delete after use)                          | [`setup/README.md`](setup/README.md)                                 |
 
 Root convention files are declarative and self-documenting: `.editorconfig`
 (style), `.gitattributes` (eol=lf), `.gitignore`, `.claudeignore`.
@@ -35,8 +36,10 @@ Root convention files are declarative and self-documenting: `.editorconfig`
 root). Key principles encoded there:
 
 - **Managed vs local hooks.** Off-the-shelf linters (yamllint, markdownlint,
-  shellcheck, shfmt, actionlint, gitleaks) are managed hooks. PowerShell/AsciiDoc/
-  tests are `repo: local` hooks → `.config/scripts/*.ps1`.
+  shellcheck, shfmt, actionlint, zizmor, gitleaks) are managed hooks; semgrep is
+  a `repo: local` python hook installed from PyPI (its git repo does not clone
+  on Windows). PowerShell/AsciiDoc/tests are `repo: local` hooks →
+  `.config/scripts/*.ps1`.
 - **Stages = cadence.** `pre-commit` (commit), `pre-push` (push), `manual`
   (CI/merge). Test lanes map to these; standard/thorough ship commented-in-place.
 - **Local hooks fail fast**, never self-install. Bootstrap is explicit
@@ -81,3 +84,13 @@ hand-rolled `.githooks/` hook) up to this architecture:
 
 Anti-pattern this replaces: local hook logic and CI workflows re-implementing
 "the same" checks separately, which drift apart. One orchestrator, one source.
+
+## Opening a pull request
+
+`.github/pull_request_template.md` is the PR contract — `gh pr create` and the
+web UI both pre-fill it from this repo. Fill every section; **Evidence is
+mandatory** (how the change was validated: CI run, `pre-commit run --all-files`,
+tests). CI enforces the machine half (a green required `lint` check gates the
+merge); this file enforces the narrative half. The template lives *in the repo*
+(not only an org-level `.github` fallback) precisely so the CLI — and any agent
+driving it — applies it automatically.

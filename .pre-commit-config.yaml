@@ -59,10 +59,43 @@ repos:
     hooks:
       - id: actionlint
 
+  # actionlint checks workflow *correctness*; zizmor checks workflow *security*
+  # (template injection, credential leakage, unpinned/mutable action refs).
+  - repo: https://github.com/zizmorcore/zizmor-pre-commit
+    rev: v1.27.0
+    hooks:
+      - id: zizmor
+
   - repo: https://github.com/gitleaks/gitleaks
     rev: v8.30.0
     hooks:
       - id: gitleaks
+
+  # Project policy rules (structural, polyglot) from .config/semgrep/rules/.
+  # PowerShell is not semgrep-supported; pwsh policies are PSScriptAnalyzer
+  # custom rules (.config/PSScriptAnalyzerRules/). Registry rules run monthly
+  # in .github/workflows/semgrep-scheduled.yml, not here.
+  # Installed from the PyPI wheel (additional_dependencies), NOT as a managed
+  # hook: cloning the semgrep repo fails on Windows (case-colliding paths).
+  # The pin is not touched by `pre-commit autoupdate` — bump it together with
+  # .github/workflows/requirements-semgrep.txt.
+  - repo: local
+    hooks:
+      - id: semgrep
+        name: semgrep (project policy rules)
+        language: python
+        additional_dependencies: ["semgrep==1.170.0"]
+        # One process for all files: parallel semgrep instances race on
+        # ~/.semgrep/settings.yml (Windows PermissionError); it multi-cores itself.
+        require_serial: true
+        entry: semgrep
+        args:
+          - --config=.config/semgrep/rules
+          - --error
+          - --metrics=off
+          - --quiet
+          - --skip-unknown-extensions
+          - --disable-version-check
 
   # Local pwsh hooks — no native pre-commit backend. Same scripts CI runs.
   # Test lanes select tagged *.Tests.ps1 by -Lane and no-op when there are none.

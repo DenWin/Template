@@ -1,4 +1,6 @@
 #Requires -Version 7.0
+Set-StrictMode -Version Latest
+
 BeforeAll {
     # Dot-source the SUT: defines its functions; the run guard skips execution.
     . (Join-Path $PSScriptRoot 'Initialize-DevEnvironment.ps1')

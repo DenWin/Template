@@ -2,6 +2,8 @@
 # Shared helpers for the .config/scripts Pester tests. Dot-sourced from each
 # *.Tests.ps1 BeforeAll; not a test file itself.
 
+Set-StrictMode -Version Latest
+
 function Invoke-ScriptFile {
     <#
     .SYNOPSIS

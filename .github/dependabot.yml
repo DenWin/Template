@@ -1,16 +1,29 @@
 # Dependabot — scheduled, GitHub-hosted service (not a workflow, not push-driven).
-# Scope is deliberately narrow: the only ecosystem in this template it can
-# maintain is GitHub Actions versions. pre-commit hook pins are updated by
-# `pre-commit autoupdate`; PowerShell/npm deps are handled elsewhere.
+# Two ecosystems: GitHub Actions versions, and the pip pin the scheduled semgrep
+# workflow installs from requirements-semgrep.txt. pre-commit hook pins are
+# updated by `pre-commit autoupdate`; PowerShell deps are handled elsewhere.
 version: 2
 updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: monthly
+    # Wait out a freshly-published action version before adopting it — a window
+    # for a compromised/yanked release to be caught upstream (supply-chain).
+    cooldown:
+      default-days: 7
     commit-message:
       prefix: ci
     # Bundle all action bumps into a single monthly PR.
     groups:
       actions:
         patterns: ["*"]
+
+  - package-ecosystem: pip
+    directory: /.github/workflows
+    schedule:
+      interval: monthly
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: ci

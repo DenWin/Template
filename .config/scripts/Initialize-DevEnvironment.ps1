@@ -26,6 +26,8 @@ param(
     [switch]$UpdateHooks
 )
 
+Set-StrictMode -Version Latest
+
 function Test-Command { param([string]$Name) [bool](Get-Command $Name -ErrorAction SilentlyContinue) }
 
 function Test-Elevated {
@@ -92,6 +94,19 @@ Docs: https://docs.astral.sh/uv/getting-started/installation/
         if ($have) { Write-Verbose "$($m.Name) present."; continue }
         Write-Verbose "Installing $($m.Name)..."
         Invoke-DevModuleInstall -Name $m.Name -MinimumVersion $m.Min
+    }
+
+    # asciidoctor backs the asciidoctor-validate hook; it needs Ruby, which this
+    # script does not install. Warn (not fail) — the hook only fires on *.adoc.
+    if (-not (Test-Command asciidoctor)) {
+        if (Test-Command gem) {
+            Write-Verbose 'Installing asciidoctor...'
+            & gem install asciidoctor --no-document
+            if ($LASTEXITCODE -ne 0) { Write-Warning 'gem install asciidoctor failed; committing *.adoc files will fail until it is installed.' }
+        }
+        else {
+            Write-Warning 'Ruby/gem not found — asciidoctor not installed. Committing *.adoc files will fail until Ruby is installed (winget install RubyInstallerTeam.Ruby.3.4) and `gem install asciidoctor` is run.'
+        }
     }
 
     Invoke-PreCommitInstall -PythonVersion $PythonVersion -UpdateHooks:$UpdateHooks
