@@ -1,0 +1,14 @@
+# Python: an except/catch that silently swallows the error. A code generator
+# reaches for this to make a red test pass; it hides real failures.
+rules:
+  - id: no-silently-swallowed-exception
+    languages: [python]
+    severity: WARNING # weight only — every finding blocks (hook runs with --error)
+    message: >
+      Empty except swallows the error. Handle it, log it, or re-raise with
+      context — never `pass`.
+    pattern: |
+      try:
+        ...
+      except ...:
+        pass

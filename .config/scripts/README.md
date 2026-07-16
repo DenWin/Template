@@ -28,8 +28,19 @@ Approved PowerShell Verb-Noun. The verb encodes the role:
 | ------------------------------- | ---------------------------------- | ------------------------ |
 | `Initialize-DevEnvironment.ps1` | one-time local setup               | manually, once per clone |
 | `Test-PowerShellScript.ps1`     | PSScriptAnalyzer over passed files | commit + CI              |
+| ↳ custom rules                  | `../PSScriptAnalyzerRules/*.psm1`  | via the hook above       |
 | `Test-AsciiDoc.ps1`             | asciidoctor syntax validation      | commit + CI              |
 | `Invoke-TestLane.ps1`           | Pester by `-Lane`                  | commit / push / CI       |
+
+## Custom PSScriptAnalyzer rules
+
+Project-specific PowerShell policies live in `../PSScriptAnalyzerRules/` as
+`Measure-*` functions in `.psm1` modules. `Test-PowerShellScript.ps1` passes them
+to `Invoke-ScriptAnalyzer -CustomRulePath` (absolute, so resolution is
+cwd-independent) alongside the built-in rules. Shipped rule:
+`Measure-RequireStrictMode` — flags any `.ps1`/`.psm1` that never calls
+`Set-StrictMode` (data-only `.psd1` files are exempt). Add a rule by dropping a
+new module beside it; wire extra modules into the hook's `-CustomRulePath`.
 
 ## Test lanes
 

@@ -59,6 +59,13 @@ repos:
     hooks:
       - id: actionlint
 
+  # actionlint checks workflow *correctness*; zizmor checks workflow *security*
+  # (template injection, credential leakage, unpinned/mutable action refs).
+  - repo: https://github.com/zizmorcore/zizmor-pre-commit
+    rev: v1.27.0
+    hooks:
+      - id: zizmor
+
   - repo: https://github.com/gitleaks/gitleaks
     rev: v8.30.0
     hooks:

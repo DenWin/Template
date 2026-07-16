@@ -1,0 +1,9 @@
+# Control surfaces only — no `*` catch-all, so unlisted paths need no owner review.
+# Requests review only until "require code owner review" is on the branch ruleset.
+
+/.github/                @DenWin
+/.pre-commit-config.yaml @DenWin
+/.config/                @DenWin
+/setup/                  @DenWin
+/AGENTS.md               @DenWin
+/CLAUDE.md               @DenWin

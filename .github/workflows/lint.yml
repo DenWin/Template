@@ -29,12 +29,26 @@ jobs:
     name: lint # stable status-check name (used by the merge-queue ruleset)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
           # Full history so diff-range, gitleaks and actionlint see everything.
           fetch-depth: 0
+          persist-credentials: false # CI only reads; never pushes with the token
 
-      - uses: actions/setup-python@v6
+      # Server-side secret backstop, run first so a leak fails the gate fast.
+      # This is the ONE CI check that is not a local pre-commit hook, by design:
+      # the pre-commit gitleaks hook scans only STAGED changes (a no-op on a
+      # clean CI checkout) and local hooks are bypassable (--no-verify, web
+      # edits, an unconfigured clone). This scans the full history / PR range on
+      # every push and PR — server context a local hook cannot provide. It runs
+      # the same gitleaks engine, so there is no bespoke lint logic to drift.
+      - name: gitleaks (full-history secret scan)
+        uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Org accounts need a free GITLEAKS_LICENSE here; user-owned repos do not.
+
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: "3.x"
 
@@ -53,7 +67,7 @@ jobs:
       - name: Install asciidoctor
         run: sudo gem install asciidoctor --no-document
 
-      - uses: actions/cache@v6
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: ~/.cache/pre-commit
           key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
@@ -86,8 +100,10 @@ jobs:
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false # CI only reads; never pushes with the token
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: "3.x"
       - name: codespell

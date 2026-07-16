@@ -1,0 +1,23 @@
+# Semgrep hook FRAGMENT — inert. To activate, paste this block into the `repos:`
+# list of /.pre-commit-config.yaml, then bump the pin manually (semgrep is NOT
+# managed by `pre-commit autoupdate` here — see below).
+#
+# `repo: local` + PyPI wheel, NOT the managed `repo: https://github.com/semgrep/semgrep`
+# form: that clones semgrep's own git repo, which contains case-colliding paths
+# that fail checkout on Windows/NTFS. `require_serial: true` avoids a
+# `~/.semgrep/settings.yml` race between parallel instances on Windows.
+- repo: local
+  hooks:
+    - id: semgrep
+      name: semgrep (project policy rules)
+      language: python
+      additional_dependencies: ["semgrep==1.170.0"] # verify / bump manually
+      require_serial: true
+      entry: semgrep
+      args:
+        - --config=.config/semgrep/rules
+        - --error
+        - --metrics=off
+        - --quiet
+        - --skip-unknown-extensions
+        - --disable-version-check

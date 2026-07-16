@@ -1,4 +1,6 @@
 #Requires -Version 7.0
+Set-StrictMode -Version Latest
+
 BeforeAll {
     $script:Script = Join-Path $PSScriptRoot 'Test-Jsonc.ps1'
     . (Join-Path $PSScriptRoot '_TestHelpers.ps1')

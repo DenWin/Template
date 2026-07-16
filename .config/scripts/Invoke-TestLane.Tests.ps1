@@ -1,4 +1,6 @@
 #Requires -Version 7.0
+Set-StrictMode -Version Latest
+
 # Capability flags must be set at DISCOVERY time (-Skip is evaluated then).
 $HasPester = [bool](Get-Module -ListAvailable -Name Pester |
         Where-Object { $_.Version -ge [version]'5.0.0' })

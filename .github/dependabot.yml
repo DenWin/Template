@@ -8,6 +8,10 @@ updates:
     directory: /
     schedule:
       interval: monthly
+    # Wait out a freshly-published action version before adopting it — a window
+    # for a compromised/yanked release to be caught upstream (supply-chain).
+    cooldown:
+      default-days: 7
     commit-message:
       prefix: ci
     # Bundle all action bumps into a single monthly PR.
