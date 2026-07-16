@@ -16,14 +16,15 @@ PRs, full at the merge gate.
 
 ## Mechanism map
 
-| Mechanism          | Where                            | Doc                                                                  |
-| ------------------ | -------------------------------- | -------------------------------------------------------------------- |
-| Orchestration      | `.pre-commit-config.yaml` (root) | this file + inline comments                                          |
-| Configs            | `.config/`                       | [`.config/README.md`](.config/README.md)                             |
-| Linting & testing  | `.config/scripts/`               | [`.config/scripts/README.md`](.config/scripts/README.md)             |
-| CI & automation    | `.github/`                       | [`.github/README.md`](.github/README.md)                             |
-| Editor integration | `.vscode/`                       | [`.vscode/README.md`](.vscode/README.md)                             |
-| Opt-in tooling     | `.config/overlays/`              | [`.config/overlays/vale/README.md`](.config/overlays/vale/README.md) |
+| Mechanism           | Where                            | Doc                                                                  |
+| ------------------- | -------------------------------- | -------------------------------------------------------------------- |
+| Orchestration       | `.pre-commit-config.yaml` (root) | this file + inline comments                                          |
+| Configs             | `.config/`                       | [`.config/README.md`](.config/README.md)                             |
+| Linting & testing   | `.config/scripts/`               | [`.config/scripts/README.md`](.config/scripts/README.md)             |
+| CI & automation     | `.github/`                       | [`.github/README.md`](.github/README.md)                             |
+| Editor integration  | `.vscode/`                       | [`.vscode/README.md`](.vscode/README.md)                             |
+| Opt-in tooling      | `.config/overlays/`              | [`.config/overlays/vale/README.md`](.config/overlays/vale/README.md) |
+| One-time repo setup | `setup/` (delete after use)      | [`setup/README.md`](setup/README.md)                                 |
 
 Root convention files are declarative and self-documenting: `.editorconfig`
 (style), `.gitattributes` (eol=lf), `.gitignore`, `.claudeignore`.

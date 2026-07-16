@@ -17,21 +17,18 @@ There is **no bespoke CI lint logic**. The workflow runs the exact same
 File-scoped linters run only over changed files on a PR; the test hooks are
 `always_run`, so the fast lane runs in full regardless.
 
-### Enabling the merge gate (once per repo)
+### Protecting the default branch (once per repo)
 
-For the full set to gate a merge (not just run after), the default branch needs
-a **merge queue** ruleset that requires the `lint` check. The `merge_group` event
-then validates the queued commit **before** it reaches `main`; without it,
-`push: main` still runs the full set, but only *after* the merge has landed.
-
-Do this **after** the first push and one CI run (so the `lint` check exists):
+The `merge_group` gate only fires if the branch has a **merge-queue ruleset**.
+That ruleset — plus the PR requirement, the required `lint` check, and
+force-push/deletion blocks — is applied by the one-time setup tooling:
 
 ```pwsh
-pwsh -NoProfile -File .config/scripts/Enable-MergeQueue.ps1
+pwsh -NoProfile -File setup/Protect-MainBranch.ps1
 ```
 
-The script creates the ruleset via `gh`. Equivalent manual path: *Settings →
-Rules → Rulesets → New → require merge queue + require the `lint` status check*.
+Run it **after** the first push and one CI run (so the `lint` check exists),
+then delete the `setup/` folder. See [`setup/README.md`](../setup/README.md).
 
 ### What CI installs
 
