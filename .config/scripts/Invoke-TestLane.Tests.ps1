@@ -50,4 +50,24 @@ Describe 'Invoke-TestLane (isolated)' -Tag 'Standard' {
             Set-Content -LiteralPath (Join-Path $testsDir 'Dummy.Tests.ps1')
         Invoke-ScriptFile -Path $iso.Script -Arguments @('-Lane', 'Fast') | Should -Not -Be 0
     }
+
+    It 'exposes no pre-5 Pester to the run (legacy module path scrubbed)' -Skip:(-not $HasPester) {
+        # A legacy Pester on the Windows PowerShell path auto-loads when a test
+        # calls a Pester-3-only command (e.g. Assert-MockCalled), silently
+        # corrupting discovery of sibling files. The lane must expose only the
+        # pinned Pester so such a command fails loudly instead.
+        $iso = Get-IsolatedScript
+        $testsDir = Join-Path $iso.Root 'tests'
+        New-Item -ItemType Directory -Path $testsDir -Force | Out-Null
+        @'
+Describe 'pester-isolation' -Tag 'Fast' {
+    It 'sees no Pester older than 5 on the module path' {
+        $legacy = Get-Module -ListAvailable Pester |
+            Where-Object { $_.Version -lt [version]'5.0.0' }
+        $legacy | Should -BeNullOrEmpty
+    }
+}
+'@ | Set-Content -LiteralPath (Join-Path $testsDir 'Isolation.Tests.ps1')
+        Invoke-ScriptFile -Path $iso.Script -Arguments @('-Lane', 'Fast') | Should -Be 0
+    }
 }

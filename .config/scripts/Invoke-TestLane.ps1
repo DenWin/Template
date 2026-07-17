@@ -26,6 +26,15 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+# Expose only this pwsh's modules to the run. Windows PowerShell ships an old
+# Pester (3.x) on its module path; a test that calls a Pester-3-only command
+# (e.g. Assert-MockCalled) auto-loads that legacy Pester and corrupts discovery
+# of sibling files. Dropping the Windows PowerShell paths keeps core cmdlets
+# intact (they live under $PSHOME) while making a stray legacy command fail
+# loudly. No-op off Windows, where those paths are absent.
+$env:PSModulePath = ($env:PSModulePath -split [IO.Path]::PathSeparator |
+        Where-Object { $_ -and $_ -notmatch 'WindowsPowerShell' }) -join [IO.Path]::PathSeparator
+
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot '..' '..') | Select-Object -ExpandProperty Path
 
 $testFiles = Get-ChildItem -Path $repoRoot -Recurse -File -Filter '*.Tests.ps1' -ErrorAction SilentlyContinue |
