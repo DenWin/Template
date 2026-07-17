@@ -2,9 +2,11 @@
 
 Tooling to run **once** on a new repo created from this template, in this
 order — the last step deletes this whole folder via its own PR. Tests for
-these scripts live in [`tests/`](tests/) (setup-time code keeps its tests with
-it, so they leave with the folder). [`CHANGELOG.md`](CHANGELOG.md) has the
-version history; the current version is in [`version`](version).
+these scripts live in [`tests/`](tests/): this folder reads as an ordered
+runbook, so tests are kept out of its root rather than co-located beside each
+script (the repo-wide default — see [`.config/scripts/README.md`](../.config/scripts/README.md)).
+They still leave with the folder on teardown. [`CHANGELOG.md`](CHANGELOG.md)
+has the version history; the current version is in [`version`](version).
 
 Bringing this tooling into a repo that *wasn't* created from this template
 instead? Start with [`MIGRATION.md`](MIGRATION.md) — an executable runbook

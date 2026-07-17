@@ -58,6 +58,11 @@ cost/risk — *not* by a unit/integration label.
 there are none. Standard/thorough hooks ship **commented-in-place** in the
 pre-commit config — uncomment when you have tests for them.
 
+Tests are **co-located** beside the script they cover (`Foo.Tests.ps1` next to
+`Foo.ps1`) — the repo-wide default. The exception is [`setup/`](../../setup/),
+a user-facing runbook that segregates its tests into `setup/tests/`; discovery
+recurses from the repo root, so either layout runs the same.
+
 Keep the fast (commit) lane genuinely fast, or contributors reach for
 `--no-verify`. The floor is pwsh + Pester warm-up (~1-3s), not your assertions.
 
