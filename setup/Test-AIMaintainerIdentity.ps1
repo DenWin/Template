@@ -7,12 +7,14 @@
 .DESCRIPTION
     Run this from the shell an AI agent will use (the agent inherits that
     shell's gh/git credential). It classifies the active token and checks its
-    effective permission on this repo, then fails unless BOTH hold:
+    effective permission on this repo, then fails unless ALL hold:
 
       - the token is a GitHub App installation token (ghs_) or a fine-grained
         PAT (github_pat_) — see setup/AI-Maintainer-Identity.adoc for how to
         create one (New-AIMaintainerApp.ps1 automates the App path), and
-      - the credential does NOT have admin on the repo.
+      - the credential does NOT have admin on the repo, and
+      - the credential has effective write access (`permissions.push=true`) on
+        this repository.
 
     Everything else fails closed: an OAuth user token (gho_, your interactive
     `gh auth login` session), a classic PAT (ghp_, unscoped), or an
@@ -43,15 +45,20 @@ function Get-TokenKind {
 function Get-IdentityVerdict {
     <# Apply the least-privilege rules to the gathered facts (pure; no side
        effects). Fails closed: only the two identity mechanisms from
-       AI-Maintainer-Identity.adoc pass, and never with admin. #>
+       AI-Maintainer-Identity.adoc pass, never with admin, and only with
+       effective write permission on this repo. #>
     param(
         [Parameter(Mandatory)][string]$TokenKind,
-        [Parameter(Mandatory)][bool]$HasAdmin
+        [Parameter(Mandatory)][bool]$HasAdmin,
+        [Parameter(Mandatory)][bool]$HasWrite
     )
     $findings = [System.Collections.Generic.List[string]]::new()
 
     if ($HasAdmin) {
         $findings.Add('Credential has ADMIN on this repo — an agent could disable the branch ruleset. Use a write-only identity.')
+    }
+    if (-not $HasWrite) {
+        $findings.Add('Credential lacks write/push permission on this repo — setup cannot proceed with a read-only token.')
     }
     switch ($TokenKind) {
         'Installation' { }
@@ -84,12 +91,14 @@ function Invoke-IdentityCheck {
         return 1
     }
 
-    # Effective permission of THIS credential on THIS repo; a missing/erroring
-    # field means the token cannot see admin — treat as no-admin.
+    # Effective permissions of THIS credential on THIS repo; missing/erroring
+    # fields fail closed.
     $admin = gh api "repos/$repo" --jq '.permissions.admin' 2>$null
+    $push = gh api "repos/$repo" --jq '.permissions.push' 2>$null
     $hasAdmin = "$admin" -eq 'true'
+    $hasWrite = "$push" -eq 'true'
 
-    $verdict = Get-IdentityVerdict -TokenKind (Get-TokenKind -Token $token) -HasAdmin $hasAdmin
+    $verdict = Get-IdentityVerdict -TokenKind (Get-TokenKind -Token $token) -HasAdmin $hasAdmin -HasWrite $hasWrite
     if (-not $verdict.Pass) {
         $verdict.Findings | ForEach-Object { Write-Error $_ }
         Write-Error "This shell's credential is NOT a least-privilege AI-maintainer identity for $repo. See setup/AI-Maintainer-Identity.adoc."

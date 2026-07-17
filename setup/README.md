@@ -84,7 +84,8 @@ the knowledge base; two scripts automate what can be automated:
 pwsh -NoProfile -File setup/New-AIMaintainerApp.ps1
 
 # From the AGENT's shell: verify its credential is a bot identity
-# (installation token or fine-grained PAT) WITHOUT admin. Fails closed.
+# (installation token or fine-grained PAT) WITH repo write/push and WITHOUT
+# admin. Fails closed.
 pwsh -NoProfile -File setup/Test-AIMaintainerIdentity.ps1
 ```
 

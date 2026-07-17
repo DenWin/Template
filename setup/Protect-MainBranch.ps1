@@ -194,8 +194,15 @@ function Invoke-BranchProtection {
             $failed += $ruleset.name
         }
     }
+    $optionalRulesets = @('main-protection-merge-queue')
+    $requiredFailures = @($failed | Where-Object { $_ -notin $optionalRulesets })
+
     if ($failed.Count -eq $rulesets.Count) {
         Write-Error 'All branch-protection rulesets failed; nothing was applied.'
+        return 1
+    }
+    if ($requiredFailures.Count -gt 0) {
+        Write-Error "Required branch-protection rulesets failed: $($requiredFailures -join ', ')"
         return 1
     }
     if ($failed.Count -gt 0) {

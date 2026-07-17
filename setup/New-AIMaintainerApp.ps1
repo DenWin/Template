@@ -106,7 +106,33 @@ function Save-AppCredential {
     New-Item -ItemType Directory -Force -Path $OutputDirectory | Out-Null
     $path = Join-Path $OutputDirectory "$($App.slug).private-key.pem"
     Set-Content -Path $path -Value $App.pem -NoNewline
+    Protect-PrivateKeyFile -Path $path
     $path
+}
+
+function Protect-PrivateKeyFile {
+    <# Restrict file access to the current user only. #>
+    param([Parameter(Mandatory)][string]$Path)
+
+    if ($IsWindows) {
+        $acl = [System.Security.AccessControl.FileSecurity]::new()
+        $currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().User
+        $rule = [System.Security.AccessControl.FileSystemAccessRule]::new(
+            $currentUser,
+            [System.Security.AccessControl.FileSystemRights]::Read -bor [System.Security.AccessControl.FileSystemRights]::Write,
+            [System.Security.AccessControl.AccessControlType]::Allow
+        )
+        $acl.SetOwner($currentUser)
+        $acl.SetAccessRuleProtection($true, $false)
+        $acl.SetAccessRule($rule)
+        [System.IO.File]::SetAccessControl($Path, $acl)
+        return
+    }
+
+    [System.IO.File]::SetUnixFileMode(
+        $Path,
+        [System.IO.UnixFileMode]::UserRead -bor [System.IO.UnixFileMode]::UserWrite
+    )
 }
 
 function Wait-ManifestCode {

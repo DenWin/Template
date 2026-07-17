@@ -22,31 +22,37 @@ Describe 'Get-TokenKind' -Tag 'Fast' {
 
 Describe 'Get-IdentityVerdict' -Tag 'Fast' {
     It 'passes an installation token without admin' {
-        (Get-IdentityVerdict -TokenKind 'Installation' -HasAdmin $false).Pass | Should -BeTrue
+        (Get-IdentityVerdict -TokenKind 'Installation' -HasAdmin $false -HasWrite $true).Pass | Should -BeTrue
     }
 
     It 'passes a fine-grained PAT without admin' {
-        (Get-IdentityVerdict -TokenKind 'FineGrainedPat' -HasAdmin $false).Pass | Should -BeTrue
+        (Get-IdentityVerdict -TokenKind 'FineGrainedPat' -HasAdmin $false -HasWrite $true).Pass | Should -BeTrue
     }
 
     It 'fails any credential that has admin on the repo, naming the containment risk' {
-        $v = Get-IdentityVerdict -TokenKind 'Installation' -HasAdmin $true
+        $v = Get-IdentityVerdict -TokenKind 'Installation' -HasAdmin $true -HasWrite $true
         $v.Pass | Should -BeFalse
         $v.Findings -join ' ' | Should -Match 'admin'
     }
 
     It 'fails an OAuth user token (the owner''s interactive gh session)' {
-        $v = Get-IdentityVerdict -TokenKind 'OAuthUser' -HasAdmin $false
+        $v = Get-IdentityVerdict -TokenKind 'OAuthUser' -HasAdmin $false -HasWrite $true
         $v.Pass | Should -BeFalse
         $v.Findings -join ' ' | Should -Match 'session|interactive|own account'
     }
 
     It 'fails a classic PAT (cannot be scoped per-permission)' {
-        (Get-IdentityVerdict -TokenKind 'ClassicPat' -HasAdmin $false).Pass | Should -BeFalse
+        (Get-IdentityVerdict -TokenKind 'ClassicPat' -HasAdmin $false -HasWrite $true).Pass | Should -BeFalse
     }
 
     It 'fails closed on an unrecognized token format' {
-        (Get-IdentityVerdict -TokenKind 'Unknown' -HasAdmin $false).Pass | Should -BeFalse
+        (Get-IdentityVerdict -TokenKind 'Unknown' -HasAdmin $false -HasWrite $true).Pass | Should -BeFalse
+    }
+
+    It 'fails when the credential cannot push to the repository' {
+        $v = Get-IdentityVerdict -TokenKind 'Installation' -HasAdmin $false -HasWrite $false
+        $v.Pass | Should -BeFalse
+        $v.Findings -join ' ' | Should -Match 'write|push'
     }
 }
 
@@ -61,7 +67,8 @@ Describe 'Invoke-IdentityCheck' -Tag 'Fast' {
         Mock gh {
             if ($args -contains 'view') { return 'owner/repo' }
             if ($args -contains 'token') { return 'ghs_16C7e42F292c6912E7710c838347Ae178B4a' } # gitleaks:allow
-            if (($args -join ' ') -match 'repos/') { $global:LASTEXITCODE = 0; return 'false' }
+            if (($args -join ' ') -match 'permissions\.admin') { $global:LASTEXITCODE = 0; return 'false' }
+            if (($args -join ' ') -match 'permissions\.push') { $global:LASTEXITCODE = 0; return 'true' }
             $global:LASTEXITCODE = 0
         }
         Invoke-IdentityCheck | Should -Be 0
@@ -72,7 +79,20 @@ Describe 'Invoke-IdentityCheck' -Tag 'Fast' {
         Mock gh {
             if ($args -contains 'view') { return 'owner/repo' }
             if ($args -contains 'token') { return 'gho_16C7e42F292c6912E7710c838347Ae178B4a' } # gitleaks:allow
-            if (($args -join ' ') -match 'repos/') { $global:LASTEXITCODE = 0; return 'true' }
+            if (($args -join ' ') -match 'permissions\.admin') { $global:LASTEXITCODE = 0; return 'true' }
+            if (($args -join ' ') -match 'permissions\.push') { $global:LASTEXITCODE = 0; return 'true' }
+            $global:LASTEXITCODE = 0
+        }
+        Invoke-IdentityCheck 2>$null | Should -Be 1
+    }
+
+    It 'returns non-zero when token kind is allowed but push/write is missing' {
+        Mock Test-GhCli { $true }
+        Mock gh {
+            if ($args -contains 'view') { return 'owner/repo' }
+            if ($args -contains 'token') { return 'github_pat_11ABC123_abcdef' } # gitleaks:allow
+            if (($args -join ' ') -match 'permissions\.admin') { $global:LASTEXITCODE = 0; return 'false' }
+            if (($args -join ' ') -match 'permissions\.push') { $global:LASTEXITCODE = 0; return 'false' }
             $global:LASTEXITCODE = 0
         }
         Invoke-IdentityCheck 2>$null | Should -Be 1

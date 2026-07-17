@@ -48,7 +48,7 @@ the ones this document is for:
 
 Verification is scriptable either way: `Test-AIMaintainerIdentity.ps1`, run
 from the agent's shell, fails unless the active credential is an installation
-token or fine-grained PAT without admin.
+token or fine-grained PAT with write/push access and without admin.
 
 == Choose a mechanism
 

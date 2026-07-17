@@ -89,10 +89,14 @@ Describe 'Invoke-BranchProtection' -Tag 'Fast' {
     }
 
     It 'keeps applying the rest when one ruleset (e.g. merge_queue) is rejected' {
+        $script:RulesetPostCalls = 0
         Mock Test-GhCli { $true }
         Mock gh {
             if ($args -contains 'view') { return 'owner/repo' }
-            if (($args -join ' ') -match 'main-protection-merge-queue') { $global:LASTEXITCODE = 1; return }
+            if (($args -join ' ') -match 'repos/.*/rulesets') {
+                $script:RulesetPostCalls++
+                if ($script:RulesetPostCalls -eq 5) { $global:LASTEXITCODE = 1; return }
+            }
             $global:LASTEXITCODE = 0
         }
         Invoke-BranchProtection -CheckName 'lint' -RequiredApprovals 0 -MergeMethod 'SQUASH' 3>$null |
@@ -104,6 +108,21 @@ Describe 'Invoke-BranchProtection' -Tag 'Fast' {
         Mock gh {
             if ($args -contains 'view') { return 'owner/repo' }
             $global:LASTEXITCODE = 1
+        }
+        Invoke-BranchProtection -CheckName 'lint' -RequiredApprovals 0 -MergeMethod 'SQUASH' 2>$null 3>$null |
+            Should -Be 1
+    }
+
+    It 'returns non-zero when a required ruleset (not merge_queue) is rejected' {
+        $script:RulesetPostCalls = 0
+        Mock Test-GhCli { $true }
+        Mock gh {
+            if ($args -contains 'view') { return 'owner/repo' }
+            if (($args -join ' ') -match 'repos/.*/rulesets') {
+                $script:RulesetPostCalls++
+                if ($script:RulesetPostCalls -eq 3) { $global:LASTEXITCODE = 1; return }
+            }
+            $global:LASTEXITCODE = 0
         }
         Invoke-BranchProtection -CheckName 'lint' -RequiredApprovals 0 -MergeMethod 'SQUASH' 2>$null 3>$null |
             Should -Be 1

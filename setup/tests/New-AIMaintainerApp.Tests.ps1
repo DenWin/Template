@@ -67,6 +67,16 @@ Describe 'Save-AppCredential' -Tag 'Fast' {
         $path | Should -Be (Join-Path $dir 'my-bot.private-key.pem')
         Get-Content $path -Raw | Should -Match 'BEGIN RSA PRIVATE KEY'
     }
+
+    It 'hardens private-key permissions immediately after writing' {
+        Mock Protect-PrivateKeyFile {}
+        $dir = Join-Path $TestDrive 'keys'
+        $app = @{ id = 42; slug = 'my-bot'; pem = "-----BEGIN RSA PRIVATE KEY-----`nkey`n-----END RSA PRIVATE KEY-----" }
+
+        $path = Save-AppCredential -App $app -OutputDirectory $dir
+
+        Assert-MockCalled Protect-PrivateKeyFile -Times 1 -Exactly -ParameterFilter { $Path -eq $path }
+    }
 }
 
 Describe 'Invoke-AppCreation' -Tag 'Fast' {
