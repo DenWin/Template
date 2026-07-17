@@ -5,9 +5,9 @@ description: Add a notable-change entry to a repository's CHANGELOG.md, written 
 
 # Changelog entry
 
-Record a change in `CHANGELOG.md` as a **notable** entry, written from the
-affected **audience**'s perspective, in the repository's existing format.
-Never invent a version, date, release, or impact.
+Add a **notable**-change entry to a repository's `CHANGELOG.md`, written for
+the **audience** it affects. The invariants below are non-negotiable; the
+numbered steps are the process.
 
 Read [examples](references/examples.md) for a worked model of the repository
 type in front of you — application, library/API, or infrastructure — or for
@@ -17,9 +17,8 @@ the bootstrap and negative examples.
 
 Hold these across every run:
 
-- **Evidence, not subjects.** Derive entries from the diff, commits, PR, and
-  linked issue. A commit subject says what the author typed; the diff says
-  what changed.
+- **Evidence, not subjects.** A commit subject says what the author typed; the
+  diff says what changed — derive entries from the change itself, not the log.
 - **Notable only.** Record what the **audience** would act on. Exclude
   internal refactors, formatting, test-only changes, and dependency churn —
   unless they change behavior, compatibility, security, or operator/developer
