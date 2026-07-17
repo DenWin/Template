@@ -9,12 +9,14 @@ desktop.ini
 
 # --- Editor state -------------------------------------------------------------
 # Ignore personal editor config, but KEEP the shipped tooling files.
-.vscode/*
-!.vscode/settings.json
-!.vscode/extensions.json
+/.vscode/*
+!/.vscode/settings.json
+!/.vscode/extensions.json
+!/.vscode/README.md
 
 # --- transient work (kept out of tracking for now) ----------------------------
-.temp/
-.history/
+/.temp/
+!/.temp/.gitkeep
+/.history/
 
 # --- Project-specific (add below) ---------------------------------------------

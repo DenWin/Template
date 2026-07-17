@@ -53,7 +53,7 @@ $findings = foreach ($file in $Path) {
 
 if ($findings) {
     $findings | Format-Table -AutoSize | Out-String -Width 4096 | Write-Output
-    Write-Error "PSScriptAnalyzer reported $($findings.Count) issue(s)."
+    Write-Error "PSScriptAnalyzer reported $(@($findings).Count) issue(s)."
     exit 1
 }
 

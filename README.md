@@ -15,4 +15,5 @@ pwsh -NoProfile -File .config/scripts/Initialize-DevEnvironment.ps1
 ```
 
 For what the tooling does and why it's shaped this way, see
-[.config/README.md](.config/README.md).
+[.config/README.md](.config/README.md). Migrating this tooling into a repo
+that isn't scaffolded from this template? See [setup/MIGRATION.md](setup/MIGRATION.md).

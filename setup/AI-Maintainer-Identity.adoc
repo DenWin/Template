@@ -32,6 +32,24 @@ With that in place, the branch ruleset (`Protect-MainBranch.ps1`) is enforced
 *against the agents*, and `CODEOWNERS` can require your review on the control
 surfaces while routine agent PRs flow through CI + auto-merge.
 
+== Which agents need an identity you create
+
+Only agents that run *in your shell* use a credential you provide — those are
+the ones this document is for:
+
+* *Locally-run agents* (Claude Code CLI, Codex CLI, aider, …) inherit the
+  `GH_TOKEN`/git credential of the shell they run in. Create *one App (or PAT)
+  per agent* — separate identities keep attribution clean and let you revoke
+  one agent without touching the others.
+* *Vendor-hosted agents* (GitHub Copilot coding agent, Codex cloud) act
+  through the vendor's own pre-built GitHub App. You install and repo-scope
+  *theirs* — you cannot substitute your own. Verify their installation is
+  limited to the intended repos and grants no admin.
+
+Verification is scriptable either way: `Test-AIMaintainerIdentity.ps1`, run
+from the agent's shell, fails unless the active credential is an installation
+token or fine-grained PAT without admin.
+
 == Choose a mechanism
 
 [cols="1,3,3",options="header"]
@@ -71,6 +89,11 @@ PAT, and never grant `Administration`.
 == Option A — GitHub App
 
 === Create
+
+`New-AIMaintainerApp.ps1` automates this section via GitHub's app-manifest
+flow — it builds the manifest below, opens the browser for the single
+confirmation GitHub requires (there is no pure-API path to App creation), and
+saves the private key locally. The manual path, for reference:
 
 . *Settings → Developer settings → GitHub Apps → New GitHub App.*
 . Name it per agent or one shared maintainer app (e.g. `denwin-ai-maintainer`).
@@ -150,6 +173,8 @@ Mitigate by convention:
 
 == See also
 
+* `setup/New-AIMaintainerApp.ps1` — scripted App creation (manifest flow).
+* `setup/Test-AIMaintainerIdentity.ps1` — verify an agent shell's credential; run before `Complete-Setup.ps1`.
 * `setup/Protect-MainBranch.ps1` — the branch ruleset the identities are enforced against.
 * `setup/Enable-RepoSecurity.ps1` — server-side security toggles.
 * `.github/CODEOWNERS` — the control surfaces that require owner review.

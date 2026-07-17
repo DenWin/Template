@@ -2,7 +2,13 @@
 Set-StrictMode -Version Latest
 
 # Capability flags must be set at DISCOVERY time (-Skip is evaluated then).
-$HasAsciidoctor = [bool](Get-Command asciidoctor -ErrorAction SilentlyContinue)
+# Probe an actual run, not just the command's existence: a Windows shim
+# (asciidoctor.bat) can be on PATH while the Ruby behind it is not.
+$HasAsciidoctor = $false
+if (Get-Command asciidoctor -ErrorAction SilentlyContinue) {
+    asciidoctor --version *> $null
+    $HasAsciidoctor = ($LASTEXITCODE -eq 0)
+}
 
 BeforeAll {
     $script:Script = Join-Path $PSScriptRoot 'Test-AsciiDoc.ps1'

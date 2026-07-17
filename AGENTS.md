@@ -26,6 +26,7 @@ PRs, full at the merge gate.
 | Policy rules        | `.config/PSScriptAnalyzerRules/` | [`.config/scripts/README.md`](.config/scripts/README.md)             |
 | Opt-in tooling      | `.config/overlays/`              | [`.config/overlays/vale/README.md`](.config/overlays/vale/README.md) |
 | One-time repo setup | `setup/` (delete after use)      | [`setup/README.md`](setup/README.md)                                 |
+| Optional AI skills  | `setup/optional-skills/`         | [`setup/README.md`](setup/README.md)                                 |
 
 Root convention files are declarative and self-documenting: `.editorconfig`
 (style), `.gitattributes` (eol=lf), `.gitignore`, `.claudeignore`.
@@ -43,45 +44,46 @@ root). Key principles encoded there:
 - **Local hooks fail fast**, never self-install. Bootstrap is explicit
   (`.config/scripts/Initialize-DevEnvironment.ps1`).
 
-## Reuse: prefer a symlink over a copy
+## Development workflow: TDD
 
-When the same file must exist in more than one place, **symlink it** instead of
-copying — one source of truth, no drift (ai-lab copied such files and they
-drifted). Git tracks symlinks natively.
+Behavioral changes to the repo's scripts are developed test-first with the
+`develop-with-tdd` skill. If that skill — or an equivalent TDD skill — is
+already installed in your agent, use it; there is no need for a second copy.
+If none exists, use the bundled one at
+[`setup/optional-skills/skills/develop-with-tdd/`](setup/optional-skills/skills/develop-with-tdd/SKILL.md):
+install it into your agent's skill directory (Claude Code: `.claude/skills/`
+in the repo, or `~/.claude/skills/` for all repos), or follow its `SKILL.md`
+in place. The bundle is deleted with the rest of `setup/` at the end of
+bootstrap — install it *before* running `Complete-Setup.ps1` if you want to
+keep it.
 
-- **Windows:** enable **Developer Mode** (Settings → For developers) so symlinks
-  materialize *without admin rights* — do **not** reach for an elevated shell
-  (that breaks pre-commit, see the bootstrap note). Without it, git checks
-  symlinks out as plain text files holding the target path. Keep
-  `git config core.symlinks true`.
-- Reserve copies for cases where the two files are meant to diverge.
+## Reuse: prefer an include over a copy; a symlink only when no include exists
+
+When the same content must exist in more than one place, in order of
+preference:
+
+1. **Content-level include** — the format's own indirection: the `@AGENTS.md`
+   import in `CLAUDE.md`, `extends` in markdownlint/VS Code settings, explicit
+   config paths in pre-commit hook `args`. Degrades *loudly* (a missing file
+   errors) and works on every machine — use it whenever the format offers one.
+2. **Symlink** — when the format has no include mechanism. One source of
+   truth, no drift (ai-lab copied such files and they drifted). Git tracks
+   symlinks natively, but on Windows they only materialize with **Developer
+   Mode** (Settings → For developers) *and* `git config core.symlinks true` —
+   without both, git silently checks them out as plain text files holding the
+   target path, and nothing errors. `Initialize-DevEnvironment.ps1` probes
+   symlink creation and warns when the machine can't do it. Do **not** reach
+   for an elevated shell as a workaround (that breaks pre-commit, see the
+   bootstrap note).
+3. **Copy** — only when the two files are meant to diverge.
 
 ## Retrofit an existing repo
 
-To bring another repo (e.g. one using split per-language workflows and a
-hand-rolled `.githooks/` hook) up to this architecture:
-
-1. **Adopt the orchestrator.** Copy `.pre-commit-config.yaml` and adapt the hook
-   list to the repo's languages. Remove any `core.hooksPath`/`.githooks/` setup —
-   pre-commit replaces it. Don't set `core.hooksPath`; the two conflict.
-2. **Relocate configs** into `.config/`, referenced explicitly via hook `args`
-   (keep root-forced files at root). Factor markdown rules into
-   `markdownlint.jsonc` so the editor and CLI share them.
-3. **Move custom checks into shared scripts.** Any bespoke lint/test logic that
-   lived in CI *and* a local hook becomes one `.config/scripts/*.ps1` invoked as
-   a `repo: local` hook — run identically local and in CI. Delete the duplicate.
-4. **Collapse CI to one workflow** that runs `pre-commit run` (scoped on
-   `pull_request`, full on `merge_group`). Replace N split per-language workflows;
-   path-filtering is no longer needed because pre-commit scopes by file.
-5. **Wire the editor** (`.vscode/settings.json`) and add recommendations.
-6. **Copy the docs** (this file + the per-folder READMEs), trimming to the
-   retrofitted repo's actual tools.
-7. **Purge phantoms.** Verify every tool exists (e.g. there is **no**
-   `asciidoctor-lint` gem — use `asciidoctor --failure-level` for syntax + Vale
-   for prose).
-
-Anti-pattern this replaces: local hook logic and CI workflows re-implementing
-"the same" checks separately, which drift apart. One orchestrator, one source.
+See [`setup/MIGRATION.md`](setup/MIGRATION.md) for the full step-by-step walkthrough of
+bringing this architecture into a repo not scaffolded from this template — one
+step per concept in the mechanism map above, in dependency order, including
+the platform limitations you'll hit along the way (e.g. `merge_queue` on a
+personal/user-owned repo).
 
 ## Opening a pull request
 

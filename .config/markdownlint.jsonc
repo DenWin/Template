@@ -11,6 +11,9 @@
   "MD033": false,
   // First line need not be a top-level heading.
   "MD041": false,
+  // Duplicate headings are fine under DIFFERENT parents (e.g. a "Reach Green"
+  // step repeated per worked example); only same-level siblings must differ.
+  "MD024": { "siblings_only": true },
 
   // Emphasis / strong markers: asterisk (deliberate preference; the table
   // formatter never touches emphasis, so there is no underscore conflict).

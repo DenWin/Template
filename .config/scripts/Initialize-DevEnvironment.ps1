@@ -35,6 +35,20 @@ function Test-Elevated {
     ([Security.Principal.WindowsPrincipal]$id).IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)
 }
 
+function Test-SymlinkCapability {
+    <# Probe an actual symlink creation, not a settings query — Developer Mode /
+       SeCreateSymbolicLink can only be proven by trying. #>
+    $target = Join-Path ([IO.Path]::GetTempPath()) ([IO.Path]::GetRandomFileName())
+    $link = "$target.link"
+    try {
+        New-Item -ItemType File -Path $target -ErrorAction Stop | Out-Null
+        New-Item -ItemType SymbolicLink -Path $link -Target $target -ErrorAction Stop | Out-Null
+        $true
+    }
+    catch { $false }
+    finally { Remove-Item $link, $target -Force -ErrorAction SilentlyContinue }
+}
+
 function Invoke-DevModuleInstall {
     param([string]$Name, [string]$MinimumVersion)
     Install-Module -Name $Name -MinimumVersion $MinimumVersion -Scope CurrentUser -Force -Repository PSGallery
@@ -74,6 +88,15 @@ function Invoke-Initialize {
 
     if (Test-Elevated) {
         Write-Warning 'This shell is ELEVATED (admin). pre-commit will fail to fetch hooks. Close it and run VS Code / your terminal WITHOUT admin rights.'
+    }
+
+    # Symlinked files (see AGENTS.md "Reuse") silently check out as plain text
+    # when the machine or git can't do symlinks — warn, don't fail.
+    if (-not (Test-SymlinkCapability)) {
+        Write-Warning 'Symlinks cannot be created here. On Windows, enable Developer Mode (Settings -> For developers) — do NOT use an elevated shell. Symlinked repo files will check out as plain text until then.'
+    }
+    elseif ((git config core.symlinks) -eq 'false') {
+        Write-Warning 'git config core.symlinks is false — git will check symlinks out as plain text files. Run: git config core.symlinks true (then re-checkout affected files).'
     }
 
     if (-not (Test-Command uv)) {
