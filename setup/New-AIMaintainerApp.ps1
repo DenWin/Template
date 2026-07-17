@@ -115,17 +115,19 @@ function Protect-PrivateKeyFile {
     param([Parameter(Mandatory)][string]$Path)
 
     if ($IsWindows) {
-        $acl = [System.Security.AccessControl.FileSecurity]::new()
+        # .NET Core dropped [System.IO.File]::SetAccessControl; seed the
+        # descriptor from the file itself and apply it with Set-Acl (PS7-native).
         $currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().User
+        $acl = Get-Acl -Path $Path
+        $acl.SetOwner($currentUser)
+        $acl.SetAccessRuleProtection($true, $false)
         $rule = [System.Security.AccessControl.FileSystemAccessRule]::new(
             $currentUser,
             [System.Security.AccessControl.FileSystemRights]::Read -bor [System.Security.AccessControl.FileSystemRights]::Write,
             [System.Security.AccessControl.AccessControlType]::Allow
         )
-        $acl.SetOwner($currentUser)
-        $acl.SetAccessRuleProtection($true, $false)
         $acl.SetAccessRule($rule)
-        [System.IO.File]::SetAccessControl($Path, $acl)
+        Set-Acl -Path $Path -AclObject $acl
         return
     }
 

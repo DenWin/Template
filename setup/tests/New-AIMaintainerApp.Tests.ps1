@@ -75,7 +75,7 @@ Describe 'Save-AppCredential' -Tag 'Fast' {
 
         $path = Save-AppCredential -App $app -OutputDirectory $dir
 
-        Assert-MockCalled Protect-PrivateKeyFile -Times 1 -Exactly -ParameterFilter { $Path -eq $path }
+        Should -Invoke Protect-PrivateKeyFile -Times 1 -Exactly -ParameterFilter { $Path -eq $path }
     }
 }
 
