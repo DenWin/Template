@@ -6,9 +6,18 @@ BeforeAll {
     . (Join-Path $PSScriptRoot '..' 'Protect-MainBranch.ps1')
 }
 
+Describe 'Protect-MainBranch script parameters' -Tag 'Fast' {
+    It 'defaults CheckName to Quality gate' {
+        $scriptPath = Join-Path $PSScriptRoot '..' 'Protect-MainBranch.ps1'
+        $content = Get-Content -LiteralPath $scriptPath -Raw
+        $defaultParam = [regex]::Escape("[string]`$CheckName = 'Quality gate'")
+        $content | Should -Match $defaultParam
+    }
+}
+
 Describe 'Get-ProtectionRuleset' -Tag 'Fast' {
     BeforeAll {
-        $script:Rs = Get-ProtectionRuleset -CheckName 'lint' -RequiredApprovals 0 -MergeMethod 'SQUASH'
+        $script:Rs = Get-ProtectionRuleset -CheckName 'Quality gate' -RequiredApprovals 0 -MergeMethod 'SQUASH'
         $script:AllRules = $script:Rs.rules
     }
 
@@ -27,7 +36,7 @@ Describe 'Get-ProtectionRuleset' -Tag 'Fast' {
 
     It 'requires the given status check' {
         $rsc = ($script:AllRules | Where-Object type -EQ 'required_status_checks').parameters.required_status_checks
-        $rsc.context | Should -Contain 'lint'
+        $rsc.context | Should -Contain 'Quality gate'
     }
 
     It 'blocks force-push and deletion' {
@@ -84,7 +93,7 @@ Describe 'Get-MergeFlowSetting' -Tag 'Fast' {
 Describe 'Invoke-BranchProtection' -Tag 'Fast' {
     It 'returns non-zero when gh is not installed' {
         Mock Test-GhCli { $false }
-        Invoke-BranchProtection -CheckName 'lint' -RequiredApprovals 0 -MergeMethod 'SQUASH' 2>$null |
+        Invoke-BranchProtection -CheckName 'Quality gate' -RequiredApprovals 0 -MergeMethod 'SQUASH' 2>$null |
             Should -Be 1
     }
 
@@ -99,7 +108,7 @@ Describe 'Invoke-BranchProtection' -Tag 'Fast' {
             }
             $global:LASTEXITCODE = 0
         }
-        Invoke-BranchProtection -CheckName 'lint' -RequiredApprovals 0 -MergeMethod 'SQUASH' 3>$null |
+        Invoke-BranchProtection -CheckName 'Quality gate' -RequiredApprovals 0 -MergeMethod 'SQUASH' 3>$null |
             Should -Be 0
     }
 
@@ -109,7 +118,7 @@ Describe 'Invoke-BranchProtection' -Tag 'Fast' {
             if ($args -contains 'view') { return 'owner/repo' }
             $global:LASTEXITCODE = 1
         }
-        Invoke-BranchProtection -CheckName 'lint' -RequiredApprovals 0 -MergeMethod 'SQUASH' 2>$null 3>$null |
+        Invoke-BranchProtection -CheckName 'Quality gate' -RequiredApprovals 0 -MergeMethod 'SQUASH' 2>$null 3>$null |
             Should -Be 1
     }
 
@@ -124,7 +133,7 @@ Describe 'Invoke-BranchProtection' -Tag 'Fast' {
             }
             $global:LASTEXITCODE = 0
         }
-        Invoke-BranchProtection -CheckName 'lint' -RequiredApprovals 0 -MergeMethod 'SQUASH' 2>$null 3>$null |
+        Invoke-BranchProtection -CheckName 'Quality gate' -RequiredApprovals 0 -MergeMethod 'SQUASH' 2>$null 3>$null |
             Should -Be 1
     }
 }

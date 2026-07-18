@@ -97,8 +97,8 @@ repo's root.
    revision so their rule definitions do not drift. Carry over `CODEOWNERS`,
    issue templates, and `pull_request_template.md` for the same
    Evidence-mandatory PR contract.
-   *Done when:* exactly one lint workflow remains and a test PR shows the
-   `lint` check green.
+   *Done when:* exactly one quality-gate workflow remains and a test PR shows the
+   `Quality gate` check green.
 
 7. **Wire the editor** (concept 7): copy `.vscode/settings.json` (`extends`
    the same `.config/markdownlint.jsonc`) and `.vscode/extensions.json`, and
@@ -155,7 +155,7 @@ repo's root.
     *Done when:* every tool named in a doc can be invoked in the target repo.
 
 12. **Copy and run the one-time setup tooling** (concept 11) after the first
-    push and one CI run (so the `lint` check the ruleset requires actually
+    push and one CI run (so the `Quality gate` check the ruleset requires actually
     exists): copy the whole `setup/` folder (including this file and
     `optional-skills/` only if step 10 needs it), then follow
     [`README.md`](README.md) — protection, security settings, AI-maintainer

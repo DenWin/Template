@@ -118,7 +118,7 @@ personal/user-owned repo).
 `.github/pull_request_template.md` is the PR contract — `gh pr create` and the
 web UI both pre-fill it from this repo. Fill every section; **Evidence is
 mandatory** (how the change was validated: CI run, `pre-commit run --all-files`,
-tests). CI enforces the machine half (a green required `lint` check gates the
+tests). CI enforces the machine half (a green required `Quality gate` check gates the
 merge); this file enforces the narrative half. The template lives *in the repo*
 (not only an org-level `.github` fallback) precisely so the CLI — and any agent
 driving it — applies it automatically.
