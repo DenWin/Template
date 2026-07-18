@@ -12,9 +12,10 @@
 
       1. FAILSAFE: aborts if the repo is a template repo (`isTemplate`), so the
          template itself never loses its setup tooling,
-      2. aborts on a dirty worktree, so the PR contains only the removal,
-      3. branches, `git rm -r setup`, commits, pushes, and opens a PR whose
-         body fills the repo's PR template (Evidence included).
+      2. aborts on a dirty worktree or unsafe AI-maintainer identity,
+      3. branches, removes template-only references from permanent docs,
+         runs `git rm -r setup`, commits, pushes, and opens a PR whose body
+         fills the repo's PR template (Evidence included).
 
     Requires the GitHub CLI, authenticated with push access, run from the
     repo root.
@@ -30,6 +31,158 @@ param(
 Set-StrictMode -Version Latest
 
 function Test-GhCli { [bool](Get-Command gh -ErrorAction SilentlyContinue) }
+
+function Test-AIMaintainerPrecondition {
+    param([string]$RepositoryRoot = (Get-Location).Path)
+
+    $identityScript = Join-Path $RepositoryRoot 'setup' 'Test-AIMaintainerIdentity.ps1'
+    if (-not (Test-Path -LiteralPath $identityScript -PathType Leaf)) {
+        Write-Error "Identity verifier not found: $identityScript"
+        return $false
+    }
+
+    & pwsh -NoProfile -File $identityScript
+    return $LASTEXITCODE -eq 0
+}
+
+function Remove-TemplateOnlyDocumentation {
+    <# Remove content explicitly marked as useful only while setup/ exists.
+       Markers let downstream repos customize the surrounding documents
+       without this script replacing whole files. Returns changed paths. #>
+    [CmdletBinding(SupportsShouldProcess)]
+    param(
+        [string]$RepositoryRoot = (Get-Location).Path,
+        [string[]]$RelativePaths = @(
+            'AGENTS.md',
+            'README.md',
+            '.github/README.md',
+            '.github/CODEOWNERS',
+            '.config/scripts/README.md'
+        )
+    )
+
+    $changed = [System.Collections.Generic.List[string]]::new()
+    $htmlBlockPattern = '(?ms)^[ \t]*<!-- setup-teardown:template-only:start -->\r?\n.*?^[ \t]*<!-- setup-teardown:template-only:end -->\r?\n?'
+    $hashBlockPattern = '(?ms)^[ \t]*# setup-teardown:template-only:start[ \t]*\r?\n.*?^[ \t]*# setup-teardown:template-only:end[ \t]*(?:\r?\n|$)'
+    $linePattern = '(?m)^.*(?:<!-- setup-teardown:template-only -->|# setup-teardown:template-only).*(?:\r?\n|$)'
+
+    foreach ($relativePath in $RelativePaths) {
+        $path = Join-Path $RepositoryRoot $relativePath
+        if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+            continue
+        }
+
+        $original = [System.IO.File]::ReadAllText($path)
+        $updated = [regex]::Replace($original, $htmlBlockPattern, '')
+        $updated = [regex]::Replace($updated, $hashBlockPattern, '')
+        $updated = [regex]::Replace($updated, $linePattern, '')
+
+        if ($updated -ne $original -and
+            $PSCmdlet.ShouldProcess($path, 'Remove template-only documentation')) {
+            [System.IO.File]::WriteAllText(
+                $path,
+                $updated,
+                [System.Text.UTF8Encoding]::new($false)
+            )
+            $changed.Add($relativePath)
+        }
+    }
+
+    $changed
+}
+
+function Invoke-AuthenticatedGitPush {
+    <# Force this push through GitHub HTTPS with the exact token that passed the
+       identity check. Process-scoped Git config avoids putting the token in
+       argv or changing the user's persistent credential helpers. #>
+    param(
+        [Parameter(Mandatory)]
+        [ValidatePattern('^[^/]+/[^/]+$')]
+        [string]$Repository,
+        [Parameter(Mandatory)]
+        [string]$BranchName,
+        [Parameter(Mandatory)]
+        [string]$Token
+    )
+
+    $existingCount = 0
+    if (-not [string]::IsNullOrWhiteSpace($env:GIT_CONFIG_COUNT) -and
+        (-not [int]::TryParse($env:GIT_CONFIG_COUNT, [ref]$existingCount) -or
+        $existingCount -lt 0)) {
+        throw 'GIT_CONFIG_COUNT must be a non-negative integer.'
+    }
+
+    $firstIndex = $existingCount
+    $managedNames = @(
+        'GIT_CONFIG_COUNT',
+        "GIT_CONFIG_KEY_$firstIndex",
+        "GIT_CONFIG_VALUE_$firstIndex",
+        "GIT_CONFIG_KEY_$($firstIndex + 1)",
+        "GIT_CONFIG_VALUE_$($firstIndex + 1)",
+        "GIT_CONFIG_KEY_$($firstIndex + 2)",
+        "GIT_CONFIG_VALUE_$($firstIndex + 2)",
+        'GIT_TERMINAL_PROMPT'
+    )
+    $savedEnvironment = @{}
+    foreach ($name in $managedNames) {
+        $savedEnvironment[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
+    }
+
+    $basicCredential = [Convert]::ToBase64String(
+        [System.Text.Encoding]::ASCII.GetBytes("x-access-token:$Token")
+    )
+
+    try {
+        [Environment]::SetEnvironmentVariable(
+            'GIT_CONFIG_COUNT',
+            ($existingCount + 3).ToString(),
+            'Process'
+        )
+        [Environment]::SetEnvironmentVariable(
+            "GIT_CONFIG_KEY_$firstIndex",
+            'http.https://github.com/.extraHeader',
+            'Process'
+        )
+        [Environment]::SetEnvironmentVariable(
+            "GIT_CONFIG_VALUE_$firstIndex",
+            '',
+            'Process'
+        )
+        [Environment]::SetEnvironmentVariable(
+            "GIT_CONFIG_KEY_$($firstIndex + 1)",
+            'http.https://github.com/.extraHeader',
+            'Process'
+        )
+        [Environment]::SetEnvironmentVariable(
+            "GIT_CONFIG_VALUE_$($firstIndex + 1)",
+            "Authorization: Basic $basicCredential",
+            'Process'
+        )
+        [Environment]::SetEnvironmentVariable(
+            "GIT_CONFIG_KEY_$($firstIndex + 2)",
+            'credential.helper',
+            'Process'
+        )
+        [Environment]::SetEnvironmentVariable(
+            "GIT_CONFIG_VALUE_$($firstIndex + 2)",
+            '',
+            'Process'
+        )
+        [Environment]::SetEnvironmentVariable('GIT_TERMINAL_PROMPT', '0', 'Process')
+
+        git push -u "https://github.com/$Repository.git" $BranchName
+        return $LASTEXITCODE -eq 0
+    }
+    finally {
+        foreach ($name in $managedNames) {
+            [Environment]::SetEnvironmentVariable(
+                $name,
+                $savedEnvironment[$name],
+                'Process'
+            )
+        }
+    }
+}
 
 function Test-RemovalAllowed {
     <# The template failsafe (pure; no side effects): a template repo keeps its
@@ -56,13 +209,15 @@ in place.
 
 ## Scope
 
-Deletes `setup/` only. No other file changes.
+Deletes `setup/` and removes its template-only references from permanent
+documentation and `CODEOWNERS`.
 
 ## Risk & rollback
 
-Low — the folder is inert documentation/tooling once setup ran; nothing
-references it at runtime. Rollback: revert this PR (the folder is preserved in
-history and in the upstream template).
+Low — the folder is inert documentation/tooling once setup ran. The permanent
+document edits only remove references that would otherwise become stale.
+Rollback: revert this PR (the folder is preserved in history and in the
+upstream template).
 
 ## Evidence
 
@@ -101,11 +256,38 @@ function Invoke-SetupRemoval {
         return 1
     }
 
+    if (-not (Test-AIMaintainerPrecondition)) {
+        Write-Error 'AI-maintainer identity verification failed — setup will not be removed.'
+        return 1
+    }
+
+    $pushToken = gh auth token 2>$null
+    if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($pushToken)) {
+        Write-Error 'Could not read the verified GitHub credential for the setup-removal push.'
+        return 1
+    }
+
     git switch -c $BranchName
     if ($LASTEXITCODE -ne 0) {
         Write-Error "Could not create branch '$BranchName' (does it already exist?)."
         return 1
     }
+
+    try {
+        $updatedDocs = @(Remove-TemplateOnlyDocumentation)
+    }
+    catch {
+        Write-Error "Could not clean template-only documentation: $($_.Exception.Message)"
+        return 1
+    }
+    if ($updatedDocs.Count -gt 0) {
+        git add -- @updatedDocs
+        if ($LASTEXITCODE -ne 0) {
+            Write-Error 'Staging permanent-document cleanup failed.'
+            return 1
+        }
+    }
+
     git rm -r -q -- setup
     if ($LASTEXITCODE -ne 0) {
         Write-Error 'git rm -r setup failed — is the working directory the repo root?'
@@ -116,8 +298,8 @@ function Invoke-SetupRemoval {
         Write-Error 'Commit failed.'
         return 1
     }
-    git push -u origin $BranchName
-    if ($LASTEXITCODE -ne 0) {
+    if (-not (Invoke-AuthenticatedGitPush -Repository $repoInfo.nameWithOwner `
+            -BranchName $BranchName -Token $pushToken)) {
         Write-Error 'Push failed — check your remote and permissions.'
         return 1
     }

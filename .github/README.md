@@ -18,18 +18,25 @@ File-scoped linters run only over changed files on a PR; the test hooks are
 `always_run`, so the fast lane runs in full regardless.
 
 Third-party actions are **pinned by full commit SHA** (with a `# vN` comment for
-readability) — a mutable tag can be re-pointed at malicious code, a SHA cannot.
-Dependabot updates the pins and refreshes the comment. The `zizmor` pre-commit
-hook enforces this and other workflow-security rules.
+readability), following GitHub's recommendation to pin actions to a full-length
+commit SHA as the only immutable release reference
+([GitHub secure-use guidance](https://docs.github.com/en/enterprise-cloud@latest/actions/reference/security/secure-use)).
+Dependabot updates those SHA pins and version comments
+([supported ecosystems](https://docs.github.com/en/code-security/reference/supply-chain-security/supported-ecosystems-and-repositories)).
+The `zizmor` pre-commit hook enforces this and other workflow-security rules.
 
 The `lint` job's first step is a **full-history secret scan** (`gitleaks-action`).
 This is the one CI check that is *not* a local pre-commit hook, by design: the
 pre-commit gitleaks hook scans only staged changes (a no-op in CI) and local
 hooks are bypassable, so this server-side scan is the unbypassable backstop over
 the whole history / PR range. It runs the same gitleaks engine, so no lint logic
-is duplicated. Org-owned repos need a free `GITLEAKS_LICENSE` secret; user-owned
-repos do not.
+is duplicated. `GITLEAKS_VERSION` in the workflow is kept in sync with the
+managed hook revision so rule definitions do not drift between local and CI
+scans. Org-owned repos need a free `GITLEAKS_LICENSE` secret; user-owned repos
+do not, per the
+[Gitleaks Action licensing notes](https://github.com/gitleaks/gitleaks-action#license).
 
+<!-- setup-teardown:template-only:start -->
 ### Protecting the default branch (once per repo)
 
 The `merge_group` gate only fires if the branch has a **merge-queue ruleset**.
@@ -42,6 +49,9 @@ pwsh -NoProfile -File setup/Protect-MainBranch.ps1
 
 Run it **after** the first push and one CI run (so the `lint` check exists),
 then delete the `setup/` folder. See [`setup/README.md`](../setup/README.md).
+The trigger and ruleset relationship is documented by
+[GitHub's merge-queue guide](https://docs.github.com/en/enterprise-cloud@latest/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-a-merge-queue).
+<!-- setup-teardown:template-only:end -->
 
 ### What CI installs
 
@@ -55,10 +65,13 @@ self-install:
 ## `CODEOWNERS`
 
 Auto-requests review from the listed owners when matching paths change; the
-sensitive control surfaces (`.github/`, `.pre-commit-config.yaml`, `.config/`,
-`AGENTS.md`, `setup/`) are called out explicitly. It only *requests* review
-until "require code owner review" is turned on in the branch ruleset — left off
-for solo repos, since you cannot approve your own PR.
+sensitive permanent control surfaces (`.github/`,
+`.pre-commit-config.yaml`, `.config/`, `AGENTS.md`, `CLAUDE.md`) are called out
+explicitly. CODEOWNERS requests review by itself; enforcement requires a branch
+rule that requires code-owner review
+([GitHub documentation](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners)).
+That enforcement is left off for solo repos, since you cannot approve your own
+PR.
 
 ## `pull_request_template.md`
 
@@ -73,4 +86,6 @@ is deliberately narrow — the only ecosystem in this template it can maintain i
 **GitHub Actions versions** (`github-actions`, monthly). pre-commit hook pins are
 updated by `pre-commit autoupdate`; PowerShell/npm deps are handled elsewhere.
 A 7-day `cooldown` delays adopting a just-published version, leaving a window for
-a compromised or yanked release to be caught upstream.
+a compromised or yanked release to be caught upstream. The option and its
+behavior are defined in the
+[Dependabot options reference](https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference#cooldown-).

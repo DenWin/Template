@@ -1,0 +1,226 @@
+= Assessment of `testing-methodologies-foundation.adoc`
+
+== Executive assessment
+
+The draft contains unusually broad and useful material, but it is not yet a dependable foundation or a deployable AI instruction set.
+
+* *Cut:* not yet effective. A 1,800-line teaching text, four stack guides, a glossary, debate notes, and generated-skill source are mixed into one document. The AI section duplicates and sometimes hardens claims from the human section.
+* *Completeness:* broad, but uneven. It covers more techniques than most TDD introductions, while leaving several important schools and decision criteria implicit.
+* *Correctness:* the central thesis is defensible, but a number of categorical statements are opinions presented as definitions. Several examples also contradict the rules they are meant to teach.
+* *Perspectives:* many are present, but the classicist/mockist distinction is described inconsistently, and the economic, sociotechnical, safety, and alternative-verification perspectives need explicit placement.
+
+[[1-is-the-document-sensibly-cut]]
+== 1. Is the document sensibly cut?
+
+No. The current order works locally, but the document has four audiences and purposes:
+
+[arabic]
+. a conceptual introduction for engineers;
+. a technique catalogue;
+. stack-specific reference material;
+. operational instructions for an AI agent.
+
+Those purposes have different reading patterns. Human teaching needs a dependency order: purpose before loop, loop before test design, and test design before variants. Stack advice and agent rules are lookup material and interrupt that path.
+
+The embedded AI chapter is especially costly. It says it is the single source of truth, yet it derives some files from other sections and admits one external divergence. That is a generation specification, not an AI-optimized instruction set.
+
+The replacement structure preserves this assessment as provenance rather than
+bundling the superseded original draft, and separates:
+
+* seven core and applied human chapters plus optional appendices;
+* one condensed AI reference;
+* one executable skill with progressively disclosed branches;
+* one research record and this assessment.
+
+[[2-are-the-statements-complete-and-correct]]
+== 2. Are the statements complete and correct?
+
+=== Claims to retain
+
+* TDD is a development discipline, not a coverage program.
+* Coverage is evidence about execution, not proof of useful assertions or correct behavior.
+* Writing an executable example before implementation can clarify a contract and expose interface friction.
+* Small feedback loops and behavior-focused regression tests support safe change.
+* Test level and test-first workflow are separate dimensions.
+* BDD adds behavior language, outside-in framing, examples, and cross-role collaboration; Gherkin is optional.
+* Unit, integration, contract, acceptance, E2E, property-based, mutation, and approval tests answer different questions.
+* The empirical evidence for universal productivity or defect claims is mixed and context-dependent.
+
+=== Claims that need qualification or correction
+
+[arabic]
+. *“Tests written after code are coupled to implementation.”* Timing increases anchoring risk but does not determine coupling. A post-hoc characterization or behavior test can be excellent; a test written first can still dictate internals.
+. *“A verification test does not survive reimplementation.”* A black-box verification test can survive it. Durability follows from the observed contract, not from the label “verification.”
+. *“The cost of changing the design is essentially zero.”* It is lower early, never zero.
+. *“Tests make refactoring possible at all.”* Tests increase confidence; types, formal methods, review, observability, and disciplined manual checks can also support refactoring.
+. *“BDD was explicitly created to correct the equation TDD = unit testing/coverage chasing.”* BDD did respond to recurring TDD adoption and language problems, but the draft assigns one narrow causal story too confidently. BDD later expanded into discovery, examples, ubiquitous language, and collaboration.
+. *“BDD is not a separate methodology” / “BDD and ATDD are effectively synonymous.”* These are useful simplifications only if labeled as such. Communities use the terms differently: ATDD centers acceptance criteria; BDD also includes discovery and domain language.
+. *“TDD drives E2E tests just as well as unit tests.”* Test-first can operate at any level, but slow or fragile system tests cannot provide the same tight design loop. Double-loop TDD or acceptance-test-driven development is the more precise model.
+. *“Red means assertion failure, not compilation failure.”* This is a strong local discipline for proving test sensitivity, not the universal definition of red. Other established formulations count compile or missing-symbol failures.
+. *Fake It example:* replacing `return 5` with `return a {plus} b` under one example changes behavior for other inputs. Calling that change a refactor contradicts behavior-preserving refactoring. Add a contrasting example to justify generalization, or call it an implementation step.
+. *A test with no explicit assertion has zero verification.* It still verifies that setup and execution do not fail, and some frameworks encode assertions through interactions or properties. The right warning is that “does not throw” is often too weak unless that is the intended contract.
+. *“The function could raise and the no-assertion test would pass.”* An uncaught exception fails ordinary test runners.
+. *Mutation testing “measures test quality.”* Mutation score is a useful fault-detection proxy with equivalent-mutant and tooling limitations; it is not a complete quality measure.
+. *Classicist vs. London school:* the draft later associates the London school with “never mock what you own.” London/mockist TDD commonly mocks collaborators, including owned collaborators, to drive object interactions. The text currently contradicts itself.
+. *“One When per scenario” and “one concept per test.”* Good heuristics, not definitions. Workflow scenarios may legitimately contain a sequence; optimize for one coherent behavior and diagnostic clarity.
+. *Pipeline cadence:* “acceptance/integration only at merge time or on demand” is too broad. Run any deterministic, sufficiently fast, valuable test as early as practical; separate suites by feedback cost rather than label.
+. *SQLite as a database substitute:* even in-memory SQLite differs from production engines. Use it only when those semantic differences are irrelevant; otherwise use the production engine.
+. *Tool prescriptions:* “always pytest,” “always FluentAssertions,” or “never mock a database” should defer to repository conventions and the risk being tested.
+. *Runtime artifacts ship no tests:* packaging policy is project-specific and not part of TDD.
+
+=== The user’s data-transformation heuristic
+
+“Every function that transforms data is a candidate” is a good discovery heuristic, not a test rule. Prioritize a transformation when at least one of these applies:
+
+* its contract contains non-trivial rules or invariants;
+* incorrect output has meaningful impact;
+* inputs contain important partitions or edge cases;
+* the code changes often or is hard to reason about;
+* a focused test gives faster diagnosis than a broader test.
+
+Trivial mappings already covered through a stable public behavior may not deserve a separate test. Conversely, orchestration, authorization, retries, concurrency, migrations, and integration contracts can deserve tests even when they do not look like data transformations.
+
+[[3-are-all-viewpoints-at-least-mentioned]]
+== 3. Are all viewpoints at least mentioned?
+
+No finite document can include every school, but a foundation should orient the reader to the major axes below.
+
+[cols=",,",options="header",]
+|===
+|Axis |Present in draft |Needed treatment
+|Detroit/classicist vs. London/mockist |Partial and inconsistent |Correct definitions and state trade-offs without declaring one universal winner
+|Inside-out vs. outside-in |Mostly through BDD |Name both design directions explicitly
+|Sociable vs. solitary unit tests |Implicit |Connect to collaborator choice and test doubles
+|Unit TDD vs. double-loop/acceptance TDD |Implicit nested loops |Name double-loop TDD and distinguish feedback speeds
+|BDD vs. ATDD vs. Specification by Example |Collapsed together |Preserve overlap while explaining different emphases
+|Pyramid vs. trophy |Present |Add the broader rule: shape the portfolio around risks and architecture
+|Example-based vs. property/metamorphic/model-based testing |Property only |Mention metamorphic and model-based approaches for oracle-poor systems
+|Coverage vs. mutation |Present |Add branch/condition coverage and mutation limitations
+|Legacy characterization |Strong |Add the risk that characterization freezes accidental behavior
+|Sociotechnical collaboration |Present through Three Amigos |Connect it to shared understanding, not only executable tests
+|Empirical/economic view |Empirical section present |Add cost of maintenance, flakiness, feedback delay, and opportunity cost
+|Alternative assurance |Mostly absent |Mention static analysis, types, review, formal methods, monitoring, and manual exploration
+|Non-functional qualities |Scattered |Mention security, accessibility, performance, resilience, concurrency, and operability
+|Data/ML/LLM systems |LLM section present |Distinguish deterministic pipeline tests, data checks, statistical evaluation, and online monitoring
+|===
+
+== Recommended thesis
+
+The strongest version of the document’s core idea is:
+
+____
+TDD is a feedback discipline for discovering and evolving observable contracts in small steps. The tests it leaves behind are valuable, but neither coverage nor test count is the objective. Test scope, doubles, and complementary techniques should be selected from the risk and feedback needed, not from a universal pyramid or a rule that every method must be tested.
+____
+
+The historical “stille Post” story should be presented as an interpretation of common organizational failure, not as the singular history of TDD or BDD.
+
+== Comparison with the existing global `tdd` skill
+
+The Matt Pocock skill is a useful compact baseline. Its strongest ideas are vertical slices, behavior through public interfaces, independent expected values, and explicit resistance to implementation-coupled tests.
+
+It should not be copied unchanged:
+
+* It requires user confirmation of every seam. That can interrupt routine implementation even when the repository already makes the seam clear. The new skill asks only when the choice would settle a material product or architecture decision.
+* It says refactoring is not part of the loop. That is a deliberate workflow convention, but it conflicts with the standard red–green–refactor formulation and with the core understanding being documented here. The new skill retains refactoring and gives it its own completion criterion.
+* It treats boundary-only mocking as a universal rule rather than a classicist default. The new reference names classicist and London/mockist styles accurately and requires a deliberate choice.
+* It does not cover bug reproduction, legacy characterization, outer acceptance loops, probabilistic systems, or complementary evidence. The new skill adds those as reference branches while keeping the executable process short.
+
+The result is still a skill for an ordinary coding agent, not a specialized standalone agent. `agents/openai.yaml` is presentation metadata for the skill.
+
+== Second-order review: did the deliverables perform their jobs?
+
+The first review concentrated on factual accuracy, document boundaries, and missing schools of thought. That was necessary but insufficient. A correction is only complete when it reaches every artifact that depends on it.
+
+Seven additional evaluation dimensions therefore govern the second iteration:
+
+[arabic]
+. *Traceability:* connect each material source claim to its research verdict and destination artifacts.
+. *Pedagogy:* retain worked examples, explicit learning progression, and optional stack guidance instead of reducing the human version to a manifesto.
+. *Rule strength:* distinguish Definition, Default, Heuristic, and Project decision in AI instructions.
+. *Deployability:* keep every runtime dependency of the skill inside its package.
+. *Behavioral evaluation:* test the skill against diverse realistic scenarios, not only frontmatter rules.
+. *Maintenance authority:* declare which artifact owns evidence, explanation, and executable behavior.
+. *Scope criteria:* include a perspective when it changes test selection, interpretation, or applicability; record deliberate omissions rather than silently losing them.
+
+=== Gaps discovered by the second-order review
+
+* Several research corrections had not reached the human and AI projections.
+* The skill depended on an operating reference outside its installable directory.
+* The condensed human version lost most examples and all stack-specific guidance.
+* The human chapters contained few citations even where claims were historical or empirical.
+* The same guidance appeared in multiple files without a documented maintenance authority.
+* A single simple forward test did not exercise legacy, integration, mockist, nondeterministic, or outer-loop branches.
+
+=== Resolved inconsistencies
+
+* Outer acceptance examples may guide inner work, but must remain pending, branch-local, or excluded from required gates until an evaluated suite expects them to pass.
+* A controlled internal interface may change during refactoring when callers change with it and behavior at the governing boundary remains stable.
+* A mock proves that an external effect was requested at a boundary, not that payment, delivery, or another real-world effect occurred.
+* Coverage can be a diagnostic or regulated objective without becoming a complete quality measure.
+* The skill can apply to controlled nondeterminism when an executable property, threshold, model, or deterministic seam provides an oracle.
+
+The resulting maintenance and propagation rules live in `MAINTENANCE.adoc` and `traceability.adoc`.
+
+== Comparison with public testing skills
+
+The survey in `external-skill-survey.adoc` found no public skill with a stronger general foundation than this knowledge base. The best transferable ideas were practical rather than definitional.
+
+The skill now adopts contrastive examples, mutation-sensitive data selection, meaningful factories, test-level decision examples, contract lifecycle, E2E diagnostics, flake ownership, and gate placement.
+
+It deliberately rejects fixed test ratios, universal mocking policies, mandatory coverage or mutation targets, one-assertion rigidity, and framework-specific recipes in the core workflow.
+
+== Narrative architecture review
+
+The first Markdown projection corrected facts but did not preserve a learnable argument. It read as a set of accurate positions rather than a journey from motivation to practice.
+
+The main failure was dependency order. Terms such as test-first, test quality, artifact roles, Red–Green–Refactor, and coverage appeared before the reader had a concrete cycle or a reason to need each distinction.
+
+“Addressing beginners” cannot be isolated in one section. Beginner accessibility is a constraint on every section: ground concepts before use, motivate each transition, and carry concrete behavior through the explanation.
+
+The revised human path uses this dependency order:
+
+[arabic]
+. define TDD briefly;
+. establish the change-safety and requirement problem;
+. distinguish test-first from test-after without ranking individual tests by timing;
+. state benefits and limitations before making universal claims;
+. demonstrate one complete cycle;
+. explain deliberate practice, its invariants, and recovery from failed cycles;
+. address common misconceptions before widening the vocabulary;
+. separate TDD workflow from test scope, fidelity, and execution cadence;
+. explain BDD and collaborative discovery as improvements to behavioral input;
+. address applicability, objections, greenfield, legacy, adoption, and incentives;
+. demonstrate complete cycles and retain broader material as optional reference.
+
+The original AsciiDoc remains the content quarry. Its worked reasoning on triangulation, pitfalls, BDD, doubles, objections, greenfield, and legacy adoption was preserved where research supported it.
+
+The rewrite changes presentation and dependency order rather than discarding the original thesis. Claims corrected by `research-findings.adoc` remain corrected in the new narrative.
+
+== Comprehensive coherence review
+
+The next review treated fast feedback as the organizing mechanism rather than one benefit among many.
+
+“Fast” now means the shortest trustworthy loop that faithfully exercises the current risk. Runtime alone is insufficient; relevance, fidelity, repeatability, diagnostic value, and decision timing determine feedback quality.
+
+The human and AI projections share a small invariant set:
+
+[arabic]
+. know the relevant baseline;
+. frame one behavioral decision, risk, observation boundary, and independent oracle;
+. observe a relevant, reproducible, attributable Red for new or corrected behavior;
+. reach Green through production behavior rather than weakened evidence;
+. separate behavioral change from behavior-preserving refactoring;
+. close the current cycle before starting the next;
+. report verification and remaining uncertainty honestly.
+
+Characterization, pure refactoring, exploration, and work without a useful executable oracle are explicit branches rather than silent violations of the normal cycle.
+
+The curriculum now separates common misconceptions from serious objections. Misconceptions lead to recognizable failure modes and recovery actions; objections examine whether TDD’s mechanisms repay their costs.
+
+The former broader-testing chapter was split because it combined distinct questions: evidence scope and fidelity, BDD discovery, testability, portfolio heuristics, and alternative assurance.
+
+Fast, standard, and thorough feedback lanes now describe execution cadence. They are project agreements based on measured cost and risk, not intrinsic properties of test labels.
+
+Worked material is divided into complete development sequences and compact decision examples. This preserves breadth without presenting short recommendations as demonstrations of practice.
+
+Optional techniques now live in a curated adjacent-practices appendix. A topic belongs there when it helps readers recognize TDD’s boundary but does not change the ordinary Red–Green–Refactor procedure.

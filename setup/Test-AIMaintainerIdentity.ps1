@@ -50,7 +50,9 @@ function Get-IdentityVerdict {
     param(
         [Parameter(Mandatory)][string]$TokenKind,
         [Parameter(Mandatory)][bool]$HasAdmin,
-        [Parameter(Mandatory)][bool]$HasWrite
+        [Parameter(Mandatory)][bool]$HasWrite,
+        [string]$ActorLogin = '',
+        [string]$RepositoryOwner = ''
     )
     $findings = [System.Collections.Generic.List[string]]::new()
 
@@ -62,7 +64,15 @@ function Get-IdentityVerdict {
     }
     switch ($TokenKind) {
         'Installation' { }
-        'FineGrainedPat' { }
+        'FineGrainedPat' {
+            if ([string]::IsNullOrWhiteSpace($ActorLogin) -or
+                [string]::IsNullOrWhiteSpace($RepositoryOwner)) {
+                $findings.Add('Could not verify that the fine-grained PAT belongs to a separate maintainer identity; failing closed.')
+            }
+            elseif ($ActorLogin.Equals($RepositoryOwner, [System.StringComparison]::OrdinalIgnoreCase)) {
+                $findings.Add('Fine-grained PAT belongs to the repository owner, not a separate maintainer identity. Use a GitHub App for a personal repository.')
+            }
+        }
         'OAuthUser' { $findings.Add('Token is an OAuth user token — the owner''s interactive gh session, not a separate agent identity. Actions would be attributed to your own account.') }
         'UserToServer' { $findings.Add('Token is a user-to-server App token — it acts as the signed-in user, so agent actions are attributed to you.') }
         'ClassicPat' { $findings.Add('Token is a classic PAT — it cannot be scoped per-permission or per-repo. Replace it with a fine-grained PAT or an App installation token.') }
@@ -91,6 +101,13 @@ function Invoke-IdentityCheck {
         return 1
     }
 
+    $tokenKind = Get-TokenKind -Token $token
+    $repoOwner = ($repo -split '/', 2)[0]
+    $actorLogin = ''
+    if ($tokenKind -eq 'FineGrainedPat') {
+        $actorLogin = gh api user --jq '.login' 2>$null
+    }
+
     # Effective permissions of THIS credential on THIS repo; missing/erroring
     # fields fail closed.
     $admin = gh api "repos/$repo" --jq '.permissions.admin' 2>$null
@@ -98,7 +115,8 @@ function Invoke-IdentityCheck {
     $hasAdmin = "$admin" -eq 'true'
     $hasWrite = "$push" -eq 'true'
 
-    $verdict = Get-IdentityVerdict -TokenKind (Get-TokenKind -Token $token) -HasAdmin $hasAdmin -HasWrite $hasWrite
+    $verdict = Get-IdentityVerdict -TokenKind $tokenKind -HasAdmin $hasAdmin -HasWrite $hasWrite `
+        -ActorLogin "$actorLogin" -RepositoryOwner $repoOwner
     if (-not $verdict.Pass) {
         $verdict.Findings | ForEach-Object { Write-Error $_ }
         Write-Error "This shell's credential is NOT a least-privilege AI-maintainer identity for $repo. See setup/AI-Maintainer-Identity.adoc."

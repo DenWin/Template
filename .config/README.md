@@ -6,7 +6,7 @@ for the overall architecture; the mechanisms documented elsewhere:
 - Linting & testing scripts → [`scripts/README.md`](scripts/README.md)
 - CI workflows → [`../.github/README.md`](../.github/README.md)
 - Editor integration → [`../.vscode/README.md`](../.vscode/README.md)
-- Opt-in tooling → [`overlays/`](overlays/)
+- Opt-in tooling → [`overlays/README.md`](overlays/README.md)
 
 ## Why configs live here
 
@@ -40,10 +40,3 @@ editor and commit stay in agreement.
 
 `PSScriptAnalyzerSettings.psd1` gates on `Warning` + `Error`. Suppress specific
 noisy rules via `ExcludeRules` rather than dropping a whole severity.
-
-## Overlays
-
-[`overlays/`](overlays/) is the "add-when-relevant" shelf: complete-but-inert
-tooling that never runs until activated (each carries its own config, a
-`precommit-hook.yaml` fragment to paste into the root config, and a README). See
-[`overlays/vale/`](overlays/vale/).

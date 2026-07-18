@@ -16,17 +16,21 @@ PRs, full at the merge gate.
 
 ## Mechanism map
 
-| Mechanism           | Where                            | Doc                                                                  |
-| ------------------- | -------------------------------- | -------------------------------------------------------------------- |
-| Orchestration       | `.pre-commit-config.yaml` (root) | this file + inline comments                                          |
-| Configs             | `.config/`                       | [`.config/README.md`](.config/README.md)                             |
-| Linting & testing   | `.config/scripts/`               | [`.config/scripts/README.md`](.config/scripts/README.md)             |
-| CI & automation     | `.github/`                       | [`.github/README.md`](.github/README.md)                             |
-| Editor integration  | `.vscode/`                       | [`.vscode/README.md`](.vscode/README.md)                             |
-| Policy rules        | `.config/PSScriptAnalyzerRules/` | [`.config/scripts/README.md`](.config/scripts/README.md)             |
-| Opt-in tooling      | `.config/overlays/`              | [`.config/overlays/vale/README.md`](.config/overlays/vale/README.md) |
-| One-time repo setup | `setup/` (delete after use)      | [`setup/README.md`](setup/README.md)                                 |
-| Optional AI skills  | `setup/optional-skills/`         | [`setup/README.md`](setup/README.md)                                 |
+| Mechanism           | Where                              | Doc                                                                   |
+| ------------------- | ---------------------------------- | --------------------------------------------------------------------- |
+| Orchestration       | `.pre-commit-config.yaml` (root)   | this file + inline comments                                           |
+| Configs             | `.config/`                         | [`.config/README.md`](.config/README.md)                              |
+| Linting & testing   | `.config/scripts/`                 | [`.config/scripts/README.md`](.config/scripts/README.md)              |
+| CI & automation     | `.github/`                         | [`.github/README.md`](.github/README.md)                              |
+| Editor integration  | `.vscode/`                         | [`.vscode/README.md`](.vscode/README.md)                              |
+| Policy rules        | `.config/PSScriptAnalyzerRules/`   | [`.config/scripts/README.md`](.config/scripts/README.md)              |
+| Opt-in tooling      | `.config/overlays/`                | [`.config/overlays/README.md`](.config/overlays/README.md)            |
+| Documentation graph | Markdown/AsciiDoc + README indexes | [`docs/README.adoc`](docs/README.adoc)                                |
+| AI delegation       | `.claude/`, `.codex/`              | [`CLAUDE.md`](CLAUDE.md) + [`.codex/config.toml`](.codex/config.toml) |
+<!-- setup-teardown:template-only:start -->
+| One-time repo setup | `setup/` (delete after use)      | [`setup/README.md`](setup/README.md)                                  |
+| Optional AI skills  | `setup/optional-skills/`         | [`setup/optional-skills/README.adoc`](setup/optional-skills/README.adoc) |
+<!-- setup-teardown:template-only:end -->
 
 Root convention files are declarative and self-documenting: `.editorconfig`
 (style), `.gitattributes` (eol=lf), `.gitignore`, `.claudeignore`.
@@ -49,6 +53,7 @@ root). Key principles encoded there:
 Behavioral changes to the repo's scripts are developed test-first with the
 `develop-with-tdd` skill. If that skill — or an equivalent TDD skill — is
 already installed in your agent, use it; there is no need for a second copy.
+<!-- setup-teardown:template-only:start -->
 If none exists, use the bundled one at
 [`setup/optional-skills/skills/develop-with-tdd/`](setup/optional-skills/skills/develop-with-tdd/SKILL.md):
 install it into your agent's skill directory (Claude Code: `.claude/skills/`
@@ -56,6 +61,27 @@ in the repo, or `~/.claude/skills/` for all repos), or follow its `SKILL.md`
 in place. The bundle is deleted with the rest of `setup/` at the end of
 bootstrap — install it *before* running `Complete-Setup.ps1` if you want to
 keep it.
+<!-- setup-teardown:template-only:end -->
+
+## Documentation relationships
+
+This repo uses a deliberately reduced, non-conformant subset of the draft Open
+Knowledge Format: ordinary Markdown links and AsciiDoc cross-references make
+related documents discoverable, and README indexes provide progressive
+disclosure without turning each consumer repo into a knowledge bundle. The
+adopted and rejected conventions are recorded in
+[`docs/knowledge-format.md`](docs/knowledge-format.md); do not copy the
+upstream draft into this repo.
+
+<!-- setup-teardown:template-only:start -->
+**Keep the migration runbook connected.** When a change adds, removes, or
+materially changes a permanent mechanism, agent entry point, delegation file,
+documentation convention, or setup step, review
+[`setup/MIGRATION.md`](setup/MIGRATION.md) in the same change. Update it when
+the retrofit steps change; otherwise state in the PR why migration is
+unaffected. This rule lives here because Codex reads `AGENTS.md` directly and
+Claude imports it through `CLAUDE.md`.
+<!-- setup-teardown:template-only:end -->
 
 ## Reuse: prefer an include over a copy; a symlink only when no include exists
 
@@ -67,16 +93,17 @@ preference:
    config paths in pre-commit hook `args`. Degrades *loudly* (a missing file
    errors) and works on every machine — use it whenever the format offers one.
 2. **Symlink** — when the format has no include mechanism. One source of
-   truth, no drift (ai-lab copied such files and they drifted). Git tracks
-   symlinks natively, but on Windows they only materialize with **Developer
-   Mode** (Settings → For developers) *and* `git config core.symlinks true` —
-   without both, git silently checks them out as plain text files holding the
-   target path, and nothing errors. `Initialize-DevEnvironment.ps1` probes
-   symlink creation and warns when the machine can't do it. Do **not** reach
-   for an elevated shell as a workaround (that breaks pre-commit, see the
-   bootstrap note).
+   truth, no copy drift. Git documents that `core.symlinks=false` checks
+   symlinks out as small plain files containing the link text
+   ([Git documentation](https://git-scm.com/docs/git-config#Documentation/git-config.txt-coresymlinks)).
+   On Windows, creating symlinks without elevation also depends on Developer
+   Mode ([Microsoft documentation](https://learn.microsoft.com/en-us/windows/apps/get-started/enable-your-device-for-development)).
+   `Initialize-DevEnvironment.ps1` probes creation and warns when the machine
+   cannot do it. Do **not** reach for an elevated shell as a workaround (that
+   breaks pre-commit, see the bootstrap note).
 3. **Copy** — only when the two files are meant to diverge.
 
+<!-- setup-teardown:template-only:start -->
 ## Retrofit an existing repo
 
 See [`setup/MIGRATION.md`](setup/MIGRATION.md) for the full step-by-step walkthrough of
@@ -84,6 +111,7 @@ bringing this architecture into a repo not scaffolded from this template — one
 step per concept in the mechanism map above, in dependency order, including
 the platform limitations you'll hit along the way (e.g. `merge_queue` on a
 personal/user-owned repo).
+<!-- setup-teardown:template-only:end -->
 
 ## Opening a pull request
 

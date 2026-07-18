@@ -25,8 +25,24 @@ Describe 'Get-IdentityVerdict' -Tag 'Fast' {
         (Get-IdentityVerdict -TokenKind 'Installation' -HasAdmin $false -HasWrite $true).Pass | Should -BeTrue
     }
 
-    It 'passes a fine-grained PAT without admin' {
-        (Get-IdentityVerdict -TokenKind 'FineGrainedPat' -HasAdmin $false -HasWrite $true).Pass | Should -BeTrue
+    It 'passes a fine-grained PAT owned by a separate organization member' {
+        $v = Get-IdentityVerdict -TokenKind 'FineGrainedPat' -HasAdmin $false -HasWrite $true `
+            -ActorLogin 'maintainer-bot' -RepositoryOwner 'example-org'
+        $v.Pass | Should -BeTrue
+    }
+
+    It 'rejects a fine-grained PAT owned by the personal repository owner' {
+        $v = Get-IdentityVerdict -TokenKind 'FineGrainedPat' -HasAdmin $false -HasWrite $true `
+            -ActorLogin 'owner' -RepositoryOwner 'owner'
+        $v.Pass | Should -BeFalse
+        $v.Findings -join ' ' | Should -Match 'owner|separate identity'
+    }
+
+    It 'fails closed when a fine-grained PAT actor cannot be identified' {
+        $v = Get-IdentityVerdict -TokenKind 'FineGrainedPat' -HasAdmin $false -HasWrite $true `
+            -RepositoryOwner 'example-org'
+        $v.Pass | Should -BeFalse
+        $v.Findings -join ' ' | Should -Match 'verify|identity'
     }
 
     It 'fails any credential that has admin on the repo, naming the containment risk' {
@@ -91,8 +107,22 @@ Describe 'Invoke-IdentityCheck' -Tag 'Fast' {
         Mock gh {
             if ($args -contains 'view') { return 'owner/repo' }
             if ($args -contains 'token') { return 'github_pat_11ABC123_abcdef' } # gitleaks:allow
+            if (($args -join ' ') -match 'api user') { return 'maintainer-bot' }
             if (($args -join ' ') -match 'permissions\.admin') { $global:LASTEXITCODE = 0; return 'false' }
             if (($args -join ' ') -match 'permissions\.push') { $global:LASTEXITCODE = 0; return 'false' }
+            $global:LASTEXITCODE = 0
+        }
+        Invoke-IdentityCheck 2>$null | Should -Be 1
+    }
+
+    It 'returns non-zero for the repository owner fine-grained PAT' {
+        Mock Test-GhCli { $true }
+        Mock gh {
+            if ($args -contains 'view') { return 'owner/repo' }
+            if ($args -contains 'token') { return 'github_pat_11ABC123_abcdef' } # gitleaks:allow
+            if (($args -join ' ') -match 'api user') { return 'owner' }
+            if (($args -join ' ') -match 'permissions\.admin') { $global:LASTEXITCODE = 0; return 'false' }
+            if (($args -join ' ') -match 'permissions\.push') { $global:LASTEXITCODE = 0; return 'true' }
             $global:LASTEXITCODE = 0
         }
         Invoke-IdentityCheck 2>$null | Should -Be 1

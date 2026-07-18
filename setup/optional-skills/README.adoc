@@ -1,0 +1,24 @@
+= Optional AI skills
+
+This directory bundles optional, portable agent skills and their supporting
+human knowledge. It is deleted with the rest of `setup/`, so install any wanted
+skill before running `Complete-Setup.ps1`.
+
+== Installable skills
+
+* link:skills/develop-with-tdd/SKILL.md[develop-with-tdd] — a compact runtime
+  workflow for trustworthy Red-Green-Refactor development.
+* link:skills/changelog-entry/SKILL.md[changelog-entry] — guidance for useful
+  changelog entries.
+
+Copy a complete skill directory, including its references and metadata, into
+the skill directory supported by the target agent. Skip installation when an
+equivalent skill is already available.
+
+== Human knowledge
+
+xref:knowledge/tdd/README.adoc[The TDD knowledge base] is the human learning,
+research, maintenance, and evaluation companion to the compact runtime skill.
+It is written in AsciiDoc for first-class tables and cross-references; the
+runtime package remains Markdown because agent skill entry points are named
+`SKILL.md`.

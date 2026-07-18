@@ -23,6 +23,7 @@ pwsh -NoProfile -File setup/Enable-RepoSecurity.ps1
 
 # 3. Set up the AI-maintainer identity, then verify it FROM THE AGENT'S SHELL
 pwsh -NoProfile -File setup/New-AIMaintainerApp.ps1
+# After installation, mint a repository-scoped token as shown by the script.
 pwsh -NoProfile -File setup/Test-AIMaintainerIdentity.ps1
 
 # Optional: install the bundled AI skills before they are deleted with setup/
@@ -56,6 +57,7 @@ private-with-GitHub-Enterprise-Cloud) or Enterprise Cloud generally — GitHub
 rejects it outright on a personal/user-owned repo. The script warns and skips
 it in that case; the other four protections (no force-push, no deletion,
 required PR, required `lint` check) still land.
+[GitHub documents merge-queue availability and setup requirements](https://docs.github.com/en/enterprise-cloud@latest/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-a-merge-queue).
 
 ## 2. Enable server-side security settings
 
@@ -76,26 +78,30 @@ set warn and are skipped; the script still applies the rest.
 
 Agents must work under their own least-privilege identity, never under your
 admin account. [`AI-Maintainer-Identity.adoc`](AI-Maintainer-Identity.adoc) is
-the knowledge base; two scripts automate what can be automated:
+the knowledge base; three scripts automate what can be automated:
 
 ```pwsh
-# Create a least-privilege GitHub App (one browser confirmation — GitHub has
-# no pure-API path for App creation). One App per locally-run agent.
+# Create a least-privilege GitHub App through GitHub's manifest flow.
+# One App per locally-run agent.
 pwsh -NoProfile -File setup/New-AIMaintainerApp.ps1
 
-# From the AGENT's shell: verify its credential is a bot identity
+# Install the App on this repository, then use the command printed by the
+# script to set GH_TOKEN with New-AIMaintainerToken.ps1.
+
+# From the AGENT's shell: verify its credential is a safe identity
 # (installation token or fine-grained PAT) WITH repo write/push and WITHOUT
 # admin. Fails closed.
 pwsh -NoProfile -File setup/Test-AIMaintainerIdentity.ps1
 ```
 
 Create Apps only for agents *you* run locally (Claude Code, Codex CLI, …).
-Vendor-hosted agents — Copilot coding agent, Codex cloud — bring their own
-GitHub App: install and repo-scope *theirs*; you can't substitute your own.
+Vendor-hosted agents use their product's supported source-control integration;
+scope it to only the intended repositories.
 
 ## Optional: install the bundled AI skills
 
-[`optional-skills/`](optional-skills/) bundles two skills: `develop-with-tdd`
+[`optional-skills/README.adoc`](optional-skills/README.adoc) indexes two
+skills: `develop-with-tdd`
 (plus the TDD knowledge base behind it) that this repo's docs reference, and
 `changelog-entry` for adding high-quality `CHANGELOG.md` entries. If your
 agent already has an equivalent, skip it; no need for a second copy. Otherwise

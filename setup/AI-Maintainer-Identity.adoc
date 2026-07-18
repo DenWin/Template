@@ -41,10 +41,13 @@ the ones this document is for:
   `GH_TOKEN`/git credential of the shell they run in. Create *one App (or PAT)
   per agent* — separate identities keep attribution clean and let you revoke
   one agent without touching the others.
-* *Vendor-hosted agents* (GitHub Copilot coding agent, Codex cloud) act
-  through the vendor's own pre-built GitHub App. You install and repo-scope
-  *theirs* — you cannot substitute your own. Verify their installation is
-  limited to the intended repos and grants no admin.
+* *Vendor-hosted agents* use their product's supported source-control
+  integration rather than the local shell credential described here. Configure
+  and repository-scope that integration according to the vendor documentation.
+  Codex cloud, for example, uses connected source repositories and respects the
+  repository permissions and protections exposed by the connected source
+  system
+  (https://learn.chatgpt.com/docs/enterprise/admin-setup#step-5-configure-codex-cloud[OpenAI documentation]).
 
 Verification is scriptable either way: `Test-AIMaintainerIdentity.ps1`, run
 from the agent's shell, fails unless the active credential is an installation
@@ -59,7 +62,8 @@ token or fine-grained PAT with write/push access and without admin.
 | What it is
 | An installable app whose installation token acts as a bot identity
   (`your-app[bot]`).
-| A scoped personal access token owned by you or a dedicated bot account.
+| A repository-scoped token owned by a separate bot account that is a member of
+  the repository-owning organization.
 
 | Attribution
 | Commits/PRs show the app's bot identity — clearly non-human.
@@ -79,21 +83,26 @@ token or fine-grained PAT with write/push access and without admin.
 
 | Best when
 | You want durable, auditable, revocable automation identities.
-| You want the quickest path and accept token management.
+| The repository is organization-owned and the bot is an organization member.
 |===
 
-Recommendation: *GitHub App* for durable agents; a *fine-grained PAT on a bot
-account* if you want to move fast today. Never use a classic (non-fine-grained)
-PAT, and never grant `Administration`.
+Recommendation: use a *GitHub App* for personal-account repositories and for
+durable automation generally. A fine-grained PAT is an option only for an
+organization-owned repository when the dedicated bot account is an
+organization member. GitHub documents that fine-grained PATs cannot access
+repositories where the user is only an outside or repository collaborator
+(https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#fine-grained-personal-access-tokens-limitations[GitHub limitations]).
+Never use a classic PAT, and never grant `Administration`.
 
 == Option A — GitHub App
 
 === Create
 
-`New-AIMaintainerApp.ps1` automates this section via GitHub's app-manifest
-flow — it builds the manifest below, opens the browser for the single
-confirmation GitHub requires (there is no pure-API path to App creation), and
-saves the private key locally. The manual path, for reference:
+`New-AIMaintainerApp.ps1` automates this section via GitHub's documented
+https://docs.github.com/en/apps/sharing-github-apps/registering-a-github-app-from-a-manifest[App-manifest flow]:
+it builds the manifest below, opens the browser for confirmation, exchanges the
+one-time code, and saves the private key locally. The manual path, for
+reference:
 
 . *Settings → Developer settings → GitHub Apps → New GitHub App.*
 . Name it per agent or one shared maintainer app (e.g. `denwin-ai-maintainer`).
@@ -120,42 +129,78 @@ keep that behind `CODEOWNERS` review instead.
 
 === Use from an agent
 
-An App authenticates as itself (JWT), then exchanges that for a short-lived
-*installation access token*. The simplest path is the `gh` token helper or the
-`actions/create-github-app-token` action in CI. Locally:
+An App authenticates as itself with a JWT, then exchanges that for an
+installation access token. GitHub documents a one-hour installation-token
+expiry and supports restricting the token to selected repositories and
+permissions
+(https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/generating-an-installation-access-token-for-a-github-app[GitHub documentation]).
+This setup bundle provides the local token helper:
 
-[source,bash]
+[source,powershell]
 ----
-# Mint an installation token (expires in ~1 hour), then point git/gh at it.
-# Use a helper such as `gh-token` or a small script signing a JWT with the
-# app private key; store the result in GH_TOKEN for the agent's shell only.
-export GH_TOKEN="<installation-access-token>"
-git -c user.name="denwin-ai-maintainer[bot]" \
-    -c user.email="<app-id>+denwin-ai-maintainer[bot]@users.noreply.github.com" \
-    commit -m "…"
+$env:GH_TOKEN = pwsh -NoProfile -File setup/New-AIMaintainerToken.ps1 `
+  -AppId <app-id> `
+  -InstallationId <installation-id> `
+  -Repository owner/name `
+  -PrivateKeyPath ~/.github-apps/my-agent.private-key.pem
+
+$appSlug = 'my-ai-maintainer'
+$botLogin = "${appSlug}[bot]"
+$botId = gh api "users/$botLogin" --jq .id
+git config --local user.name $botLogin
+git config --local user.email "$botId+$botLogin@users.noreply.github.com"
+
+gh auth setup-git
+pwsh -NoProfile -File setup/Test-AIMaintainerIdentity.ps1
+git var GIT_AUTHOR_IDENT
+git var GIT_COMMITTER_IDENT
 ----
 
-Give the agent a shell where `GH_TOKEN` is the installation token — separate from
-your personal `gh auth login` session.
+Replace `my-ai-maintainer` with the App slug. Repository-local `user.name` and
+`user.email` make local commits identify the App bot; authentication alone does
+not set commit authorship. Git documents that these values populate both author
+and committer fields
+(https://git-scm.com/docs/git-config#Documentation/git-config.txt-username[Git
+configuration]), while `gh auth setup-git` only configures a credential helper
+(https://cli.github.com/manual/gh_auth_setup-git[GitHub CLI manual]). The
+ID-based no-reply address follows GitHub's documented
+`ID+USERNAME@users.noreply.github.com` format
+(https://docs.github.com/en/account-and-profile/reference/email-addresses-reference#your-noreply-email-address[GitHub
+email reference]).
+
+Give the agent only this shell. The token helper first verifies that the supplied
+installation ID belongs to the full `owner/name`, then scopes the token to that
+repository. `Complete-Setup.ps1` also forces its push through HTTPS with the
+credential that passed verification, regardless of the clone's `origin`
+transport. Mint a new token after expiry; never persist it in the repository or
+shell profile.
 
 == Option B — Fine-grained PAT
 
-. Create (or reuse) a dedicated *bot GitHub account*; add it as a repository
-  *collaborator with Write* (not Admin).
+. This option requires an *organization-owned repository*. Create (or reuse) a
+  dedicated bot GitHub account and add it as an organization member with only
+  the repository access it needs.
 . As that account: *Settings → Developer settings → Fine-grained tokens →
   Generate new token.*
-. *Resource owner* = you; *Repository access* = only this repo.
+. *Resource owner* = the organization; *Repository access* = only this repo.
 . *Permissions* — Contents: Read and write; Pull requests: Read and write;
   Metadata: Read-only. Nothing else. No Administration.
 . Set a short expiry and calendar a rotation.
 . Configure the agent's git/`gh` to use that token and the bot account's
   `user.name`/`user.email`.
 
+Do not use this path for a repository owned by a personal account: GitHub's
+fine-grained PAT collaborator limitation prevents the separate bot account from
+using such a token there. Use the GitHub App path instead.
+
 == Harden further (optional)
 
-* *Require signed commits* — add the `required_signatures` rule to the branch
-  ruleset so only verified identities' commits are accepted. GitHub Apps sign
-  automatically; a bot account needs a GPG/SSH signing key.
+* *Require signed commits* only after proving the actual commit path. A local
+  `git commit` authenticated with an App token is not automatically signed;
+  configure GPG, SSH, or S/MIME signing for local commits. GitHub's special bot
+  verification rules apply to commits created through authenticated API
+  requests under specific author/committer conditions
+  (https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification#signature-verification-for-bots[GitHub documentation]).
 * *Restrict who can push to `main`* — with a PR-only ruleset and no bypass
   actors, no identity (including yours) pushes directly; break-glass is a
   deliberate, logged admin action.
@@ -173,8 +218,15 @@ Mitigate by convention:
 
 == See also
 
-* `setup/New-AIMaintainerApp.ps1` — scripted App creation (manifest flow).
-* `setup/Test-AIMaintainerIdentity.ps1` — verify an agent shell's credential; run before `Complete-Setup.ps1`.
-* `setup/Protect-MainBranch.ps1` — the branch ruleset the identities are enforced against.
-* `setup/Enable-RepoSecurity.ps1` — server-side security toggles.
-* `.github/CODEOWNERS` — the control surfaces that require owner review.
+* xref:New-AIMaintainerApp.ps1[New-AIMaintainerApp.ps1] — scripted App creation
+  through the manifest flow.
+* xref:New-AIMaintainerToken.ps1[New-AIMaintainerToken.ps1] — mint one
+  repository-scoped installation token.
+* xref:Test-AIMaintainerIdentity.ps1[Test-AIMaintainerIdentity.ps1] — verify an
+  agent shell's credential; run before `Complete-Setup.ps1`.
+* xref:Protect-MainBranch.ps1[Protect-MainBranch.ps1] — the branch ruleset the
+  identities are enforced against.
+* xref:Enable-RepoSecurity.ps1[Enable-RepoSecurity.ps1] — server-side security
+  toggles.
+* link:../.github/CODEOWNERS[CODEOWNERS] — the control surfaces that require
+  owner review.

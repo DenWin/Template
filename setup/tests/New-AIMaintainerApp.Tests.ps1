@@ -60,9 +60,15 @@ Describe 'Get-ManifestFormHtml' -Tag 'Fast' {
 }
 
 Describe 'Save-AppCredential' -Tag 'Fast' {
+    BeforeAll {
+        $keyType = 'RSA PRIVATE KEY'
+        $script:FakePrivateKey = "-----BEGIN $keyType-----`nkey`n-----END $keyType-----"
+    }
+
     It 'writes the private key next to nothing else and returns its path' {
+        Mock Protect-PrivateKeyFile {}
         $dir = Join-Path $TestDrive 'keys'
-        $app = @{ id = 42; slug = 'my-bot'; pem = "-----BEGIN RSA PRIVATE KEY-----`nkey`n-----END RSA PRIVATE KEY-----" }
+        $app = @{ id = 42; slug = 'my-bot'; pem = $script:FakePrivateKey }
         $path = Save-AppCredential -App $app -OutputDirectory $dir
         $path | Should -Be (Join-Path $dir 'my-bot.private-key.pem')
         Get-Content $path -Raw | Should -Match 'BEGIN RSA PRIVATE KEY'
@@ -71,7 +77,7 @@ Describe 'Save-AppCredential' -Tag 'Fast' {
     It 'hardens private-key permissions immediately after writing' {
         Mock Protect-PrivateKeyFile {}
         $dir = Join-Path $TestDrive 'keys'
-        $app = @{ id = 42; slug = 'my-bot'; pem = "-----BEGIN RSA PRIVATE KEY-----`nkey`n-----END RSA PRIVATE KEY-----" }
+        $app = @{ id = 42; slug = 'my-bot'; pem = $script:FakePrivateKey }
 
         $path = Save-AppCredential -App $app -OutputDirectory $dir
 

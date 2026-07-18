@@ -213,7 +213,8 @@ App created: $($app.slug) (App ID $($app.id))
 Private key: $keyPath  — move it to your secret manager; never commit it.
 Next steps:
   1. Install it on THIS repo only: $($app.html_url)/installations/new
-  2. Mint an installation token for the agent's shell (see setup/AI-Maintainer-Identity.adoc).
+  2. Note the Installation ID, then mint a repository-scoped token:
+     `$env:GH_TOKEN = pwsh -NoProfile -File setup/New-AIMaintainerToken.ps1 -AppId $($app.id) -InstallationId <id> -Repository $repo -PrivateKeyPath '$keyPath'`
   3. Verify from that shell: pwsh -NoProfile -File setup/Test-AIMaintainerIdentity.ps1
 "@ -InformationAction Continue
     return 0
