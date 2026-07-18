@@ -1,0 +1,12 @@
+= Documentation index
+
+The permanent knowledge documents in this repository are:
+
+* link:knowledge-format.md[Knowledge-format convention] — the deliberately
+  reduced, OKF-inspired rules used by Markdown and AsciiDoc documents.
+* xref:token-saving.adoc[Token-saving options for coding agents] — ways to
+  reduce total usage or preserve context, including when subagent delegation
+  is counterproductive.
+
+The repository architecture and its per-mechanism documentation map start in
+link:../AGENTS.md[AGENTS.md].

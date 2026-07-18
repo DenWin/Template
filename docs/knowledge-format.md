@@ -17,22 +17,26 @@ than copying its rules into this repository.
 
 Borrow these useful properties:
 
-- Write human- and agent-readable Markdown that remains easy to review as a Git
-  diff, reflecting OKF's
+- Write human- and agent-readable Markdown or AsciiDoc that remains easy to
+  review as a Git diff, reflecting OKF's
   [readability and diffability goals](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md#1-motivation).
-- Express relationships with explicit, standard Markdown links and enough
+- Express relationships with explicit standard links (`[label](path)` in
+  Markdown; `xref:path[label]` or `link:path[label]` in AsciiDoc) and enough
   surrounding prose to explain the relationship, as in
   [OKF cross-linking](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md#5-cross-linking).
-- Use a `README.md` as the index for a documentation directory when an index
-  helps readers discover its contents before opening individual files. This is
-  the local equivalent of OKF's
+- Use `README.md` or `README.adoc` as the index for a documentation directory
+  when an index helps readers discover its contents before opening individual
+  files. This is the local equivalent of OKF's
   [progressive-disclosure index](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md#6-index-files).
-- Cite external sources for claims that depend on them, using ordinary Markdown
-  links near the claim or a compact citations section. OKF likewise treats
+- Cite external sources for claims that depend on them, using ordinary links
+  near the claim or a compact citations section. OKF likewise treats
   [citations as supporting links](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md#8-citations).
 
-Use ordinary repository-relative links such as `../README.md` or
-`./design.md`. Do not use OKF's leading-slash, bundle-relative link convention.
+AsciiDoc is not an exception to the convention: it follows the same
+discoverability, progressive-disclosure, and citation rules as Markdown, using
+native AsciiDoc syntax. Use ordinary repository-relative targets such as
+`../README.md`, `xref:../guide/README.adoc[]`, or `link:../SKILL.md[]`. Do not
+use OKF's leading-slash, bundle-relative link convention.
 
 ## Deliberate omissions
 

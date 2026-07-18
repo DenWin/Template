@@ -1,0 +1,283 @@
+= Survey of Public Testing Skills
+
+== Decision summary
+
+The public skills surveyed do not provide a better general TDD model than
+`develop-with-tdd`. The local skill is more careful about risk, test level,
+oracle quality, the classicist/mockist distinction, coverage, and the limits of
+test doubles.
+
+Several external skills nevertheless add real value in two areas:
+
+[arabic]
+. contrastive examples that let an agent recognize good and bad test design;
+. operational guidance for integration, contract, and E2E suites, including
+failure artifacts, flake control, provider states, and environment fidelity.
+
+Those ideas should be adapted into self-contained references. The external
+skills should not become runtime dependencies.
+
+== Method
+
+This survey was performed on 2026-07-13. It inspected public `SKILL.md` files,
+their source repositories, and their skills.sh catalog entries. Catalog install
+counts and repository popularity are discovery signals, not evidence of
+technical correctness.
+
+Searches covered TDD, unit testing, integration testing, contract testing, E2E
+testing, testing strategy, and test design. `npx skills find` was attempted for
+the same terms, but did not return before the command was terminated in the
+restricted environment. The skills.sh web catalog and linked repositories were
+therefore used for discovery and source inspection.
+
+The comparison baseline was the local link:../../skills/develop-with-tdd/SKILL.md[`develop-with-tdd` skill]
+and its bundled link:../../skills/develop-with-tdd/references/operating-reference.md[`operating-reference.md`].
+
+== Sources and findings
+
+=== Matt Pocock: `tdd`
+
+* Source: https://github.com/mattpocock/skills/tree/main/skills/engineering/tdd[SKILL.md and package]
+* Supporting sources: https://github.com/mattpocock/skills/blob/main/skills/engineering/tdd/tests.md[good and bad tests], https://github.com/mattpocock/skills/blob/main/skills/engineering/tdd/mocking.md[mocking and testability]
+* Catalog: https://skills.sh/mattpocock/skills/tdd[skills.sh entry]
+* Catalog install command: `npx skills add https://github.com/mattpocock/skills --skill tdd`
+
+The strongest contribution is not a new TDD rule. It is the use of short,
+contrastive code examples: observable outcome versus incidental call, public
+API versus back-door inspection, and injected boundary versus direct
+construction. The vertical one-test/one-implementation rhythm also agrees with
+the local skill.
+
+The examples need contextual qualification. An interaction can be the intended
+observable contract in London-style TDD. A database query can be the right
+oracle when the database artifact is the contract. “Never mock owned code” is a
+classicist preference, not a definition of good testing. Requiring user approval
+for every seam would also make routine repository work unnecessarily blocking.
+
+*Verdict:* adapt the contrastive teaching form and boundary-design examples;
+reject the universal mocking and seam-approval rules.
+
+=== CityPaul: `tdd` and adjacent testing skills
+
+* Source: https://github.com/citypaul/.dotfiles/blob/main/claude/.claude/skills/tdd/SKILL.md[`tdd/SKILL.md`]
+* Repository overview: https://github.com/citypaul/.dotfiles[testing&#44; mutation-testing&#44; finding-seams&#44; and characterization skills]
+* Catalog: https://skills.sh/citypaul/dotfiles/tdd[skills.sh entry]
+* Catalog install command: `npx skills add https://github.com/citypaul/dotfiles --skill tdd`
+
+The valuable idea is mutation-aware example selection. The skill explicitly
+asks whether boundary values, boolean combinations, arithmetic identities,
+optional values, collection operations, and side effects would allow plausible
+mutants to survive. Its example showing why multiplication by `1` is a weak
+choice is a compact lesson in discriminating test data.
+
+The repository also demonstrates useful progressive disclosure: the TDD loop,
+test design, mutation testing, legacy characterization, seam finding, and
+refactoring are separate skills. That separation is useful as an editorial
+model, although this project requires the deliverable itself to remain
+self-contained.
+
+The main skill is too dogmatic for reuse as written. It requires mutation
+testing in every cycle, 100% coverage by default, production changes only after
+a failing test, and commit-history evidence of every phase. These are expensive
+project policies, not universal TDD definitions. They conflict with the local
+skill's risk-based evidence model and its treatment of exploration, regulated
+coverage, legacy work, and alternative assurance techniques.
+
+*Verdict:* adapt mutation-sensitive examples and the modular reference shape;
+reject mandatory mutation runs, universal 100% coverage, and Git-history
+ceremony.
+
+=== Asyraf Hussin: `testing-best-practices`
+
+* Source: https://github.com/AsyrafHussin/agent-skills/blob/main/skills/testing-best-practices/SKILL.md[`SKILL.md`]
+* Supporting rule package: https://github.com/AsyrafHussin/agent-skills/tree/main/skills/testing-best-practices[skill directory]
+* Catalog: https://skills.sh/asyrafhussin/agent-skills/testing-best-practices[skills.sh entry]
+* Catalog install command: `npx skills add https://github.com/asyrafhussin/agent-skills --skill testing-best-practices`
+* Source metadata: version 2.0.0 and MIT license are declared in `SKILL.md`.
+
+This skill contributes a useful review vocabulary: independence, shared mutable
+state, cleanup, deterministic control, minimal and realistic test data,
+factories/builders, specific assertions, diagnostic messages, unhappy paths,
+and suite organization for feedback speed. Its progressive rule files are more
+actionable than a single abstract paragraph.
+
+Some rules are too categorical or too stack-specific. “One assertion per test”
+should mean one coherent behavioral conclusion, not one assertion call. A fixed
+`<50ms` unit-test target is not portable. The code examples assume
+TypeScript/Jest/Vitest, and “mock only at boundaries” again expresses one school
+of TDD.
+
+*Verdict:* adapt test-data and diagnostic-quality examples; keep timing and
+assertion-count advice as heuristics, not rules.
+
+=== Asyraf Hussin: `e2e-playwright-testing`
+
+* Source: https://github.com/AsyrafHussin/agent-skills/tree/main/skills/e2e-playwright-testing[skill directory and `SKILL.md`]
+* Catalog: https://skills.sh/asyrafhussin/agent-skills/e2e-playwright-testing[skills.sh entry]
+* Catalog install command: `npx skills add https://github.com/AsyrafHussin/agent-skills --skill e2e-playwright-testing`
+
+Its reusable value is operational: prefer user-facing semantic locators, use
+framework-aware waiting instead of arbitrary sleeps, reuse authenticated state
+carefully, avoid shared-database parallelism when isolation is absent, and turn
+real flake causes into explicit rules. These practices make E2E failures less
+brittle and more diagnosable.
+
+The detailed rules are Playwright and web-stack specific. Authentication-state
+reuse can also conceal login regressions unless a separate login journey remains
+covered. Serial execution protects a shared database but can hide a test-data
+isolation problem rather than solve it.
+
+*Verdict:* adapt the reliability principles and show them in one browser
+example; do not embed Playwright or Laravel/React recipes in the core workflow.
+
+=== BMAD Labs: `typescript-e2e-testing`
+
+* Source: https://github.com/bmad-labs/skills/tree/main/skills/typescript-e2e-testing[`skills/typescript-e2e-testing`]
+* Repository metadata and install paths: https://github.com/bmad-labs/skills[BMAD skills repository]
+* Catalog: https://skills.sh/bmad-labs/skills/typescript-e2e-testing[skills.sh entry]
+* Catalog install command: `npx skills add https://github.com/bmad-labs/skills --skill typescript-e2e-testing`
+* Source license: the repository declares MIT.
+
+This package usefully treats E2E work as several different activities: setup,
+write, review, run, debug, and optimize. It also emphasizes real infrastructure
+and Given–When–Then workflows rather than calling a mocked controller test
+“end-to-end.” That distinction is worth preserving.
+
+Most implementation guidance is deliberately narrow: TypeScript/NestJS,
+Docker, Kafka, PostgreSQL, MongoDB, and Redis. The local skill must instead infer
+the system boundary and infrastructure from the repository. “Real
+infrastructure” also needs qualification: production-equivalent semantics are
+required only for risks that depend on them.
+
+*Verdict:* adapt the activity breakdown and environment-fidelity question;
+reject the fixed stack and unconditional infrastructure cost.
+
+=== `contract-testing-builder`
+
+* Source repository: https://github.com/patricio0312rev/skills[patricio0312rev/skills]
+* Catalog and inspectable skill text: https://skills.sh/patricio0312rev/skills/contract-testing-builder[skills.sh entry]
+* Catalog install command: `npx skills add https://github.com/patricio0312rev/skills --skill contract-testing-builder`
+
+The useful contribution is an end-to-end consumer-driven contract example:
+consumer interaction generation, provider verification against the real
+provider interface, provider-state setup, publishing/versioning, and a release
+gate. This demonstrates why a contract test is not merely an HTTP unit test.
+
+The skill sometimes groups consumer-driven contracts, OpenAPI conformance, JSON
+Schema checks, and handwritten object comparisons under one label. Those forms
+answer related but different questions. A schema check cannot prove that a
+consumer's exercised interaction is supported, while a consumer contract does
+not replace a deployed-path check. Its examples are also tied to TypeScript and
+Pact.
+
+*Verdict:* adapt a technology-neutral comparison of schema conformance,
+consumer-driven contracts, provider verification, and E2E; reject framework
+setup from the core skill.
+
+=== `qa-testing-strategy`
+
+* Source repository: https://github.com/vasilyu1983/AI-Agents-public[vasilyu1983/AI-Agents-public]
+* Catalog and inspectable skill summary: https://skills.sh/vasilyu1983/ai-agents-public/qa-testing-strategy[skills.sh entry]
+* Catalog install command: `npx skills add https://github.com/vasilyu1983/ai-agents-public --skill qa-testing-strategy`
+
+This is the strongest source for the broader portfolio view requested here. It
+selects the smallest effective layer from unit through integration, contract,
+and E2E, and adds separate merge/deploy gates, failure artifacts, logs/traces,
+ownership, quarantine policy, flake service levels, and suite-time budgets.
+
+Those are testing-strategy and suite-operations concerns, not steps that belong
+in every Red–Green–Refactor cycle. They should therefore appear as conditional
+guidance for choosing or maintaining a broader test, not as mandatory overhead
+for a focused deterministic example.
+
+*Verdict:* adopt the risk-to-evidence and operability vocabulary; adapt it as
+conditional broader-test guidance.
+
+=== `testing-strategies`
+
+* Source repository: https://github.com/supercent-io/skills-template[supercent-io/skills-template]
+* Catalog and inspectable skill text: https://skills.sh/supercent-io/skills-template/testing-strategies[skills.sh entry]
+* Catalog install command: `npx skills add https://github.com/supercent-io/skills-template --skill testing-strategies`
+
+This skill is useful as evidence of a common public pattern: explain a test
+pyramid, prescribe unit/integration/E2E layers, and add CI, isolation, and flaky
+test advice. Most of that is already covered more precisely by the local skill.
+
+Its fixed 70/20/10 ratio is not transferable between systems. A compiler, a
+database adapter, a distributed workflow, and a browser application have
+different risk distributions. Counts also say nothing about oracle strength,
+environment fidelity, or feedback time.
+
+*Verdict:* reject fixed ratios; retain the local risk-based portfolio model.
+
+== Adopt, adapt, or reject
+
+[cols=",,",options="header",]
+|===
+|External idea |Decision |Reason and destination
+|Contrastive good/bad test pairs |*Adopt* |Adds fast pattern recognition. Put in a conditional test-design reference.
+|Independent expected value versus tautological oracle |*Adopt* |Directly strengthens the local oracle rule. Show literals, properties, trusted models, and a bad implementation-derived expectation.
+|Mutation-sensitive test data |*Adapt* |Use as an example-selection heuristic; do not require mutation tooling in every cycle.
+|Inject clock, randomness, network, storage, or external service boundaries |*Adapt* |Explain the design payoff and the risk of indirection created only for a mock framework.
+|Narrow operation-specific ports |*Adapt* |Helpful at unstable external boundaries; not every owned collaborator needs an interface.
+|Test-data factories/builders and minimal overrides |*Adopt* |Adds maintainability guidance missing from the runtime reference. Preserve meaningful domain values.
+|Semantic browser locators and framework-aware waits |*Adapt* |Strong E2E reliability lesson; present technology-neutral principle plus one Playwright illustration.
+|Failure artifacts, logs/traces, ownership, quarantine, and repair |*Adopt* |Adds operational suite-health guidance currently only implied.
+|Merge gate versus deploy/smoke gate |*Adopt* |Clarifies where slower or environment-dependent evidence belongs.
+|Consumer interaction, provider state, provider verification, publication, release gate |*Adopt* |Gives contract testing a complete lifecycle instead of a one-line definition.
+|Schema conformance equals consumer-driven contract testing |*Reject* |These verify different compatibility claims and should be contrasted.
+|E2E means only browser automation |*Reject* |E2E is an external system path; the entry point may be UI, API, CLI, message, or protocol.
+|Fixed test-pyramid ratios |*Reject* |Test portfolios should follow risk, fidelity, diagnostic value, feedback time, and maintenance cost.
+|Always mock internal collaborators / never mock internal collaborators |*Reject* |Both erase the classicist/mockist choice already documented locally.
+|One assertion call per test |*Reject* |One coherent behavioral conclusion may need several observations.
+|Mandatory 100% coverage, mutation score, or per-cycle mutation run |*Reject* |These are project or regulatory decisions, not universal TDD requirements.
+|Commit history must expose every Red and Green |*Reject* |Useful optional audit evidence, but not proof of oracle quality or a universal workflow requirement.
+|===
+
+== What should be added to the local deliverables
+
+The survey supports adding examples, but not expanding `SKILL.md` into a testing
+encyclopedia. The high-value shape is progressive disclosure:
+
+[arabic]
+. `references/test-design-examples.md`
+* behavior-coupled versus structure-coupled assertions;
+* independent oracle versus tautology;
+* discriminating versus identity test data;
+* requested interaction versus verified external effect;
+* classicist and mockist versions of the same behavior;
+* test-data factory with minimal, meaningful overrides.
+. `references/test-level-examples.md`
+* focused domain rule;
+* component/API test through a stable public seam;
+* database integration where dialect or transaction semantics matter;
+* schema conformance versus consumer-driven contract plus provider verification;
+* E2E critical path with user-facing observations and failure artifacts;
+* a risk-to-level comparison showing why duplicate assertions at every layer add little value.
+. `references/design-for-testability.md`
+* difficult boundaries and enabling points;
+* narrow ports, controlled clocks/randomness, and observable results;
+* when a real dependency, fake, stub, spy, or mock is appropriate;
+* warning signs of test-induced design damage.
+. A short operational section for broader tests
+* baseline-green and reproducible-Red checks;
+* environment fidelity chosen from the risk;
+* deterministic state setup and cleanup;
+* artifacts sufficient to diagnose a remote CI failure;
+* explicit quarantine owner, reason, expiry, and repair path;
+* separate fast merge evidence from slower deploy or scheduled evidence.
+
+`SKILL.md` should load those references only when their branch applies. The
+existing operating reference should remain the authority for definitions and
+decision strength.
+
+== Final assessment
+
+No surveyed public skill exposes a missing foundational TDD school or test level
+that invalidates the current deliverables. The remaining gap is practical:
+agents need examples that connect a risk to a seam, oracle, level, environment,
+and diagnostic strategy.
+
+The recommended additions therefore provide actual new value. Copying external
+coverage targets, fixed pyramid ratios, universal mocking rules, or complete
+framework recipes would not.

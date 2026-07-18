@@ -7,14 +7,15 @@ semgrep into pre-commit is opt-in: see
 [`.config/overlays/semgrep/README.md`](../overlays/semgrep/README.md) to
 activate.
 
-Scope boundaries: PowerShell parses but its rules are **Pro-gated** (free-tier
-CLI silently skips them — see
-[`../overlays/semgrep-pro/README.md`](../overlays/semgrep-pro/README.md)
-before assuming a `languages: [powershell]` rule here does anything). SQL has
-no semgrep support at any tier. pwsh policies live in
+Scope boundaries: Semgrep's current
+[supported-language table](https://semgrep.dev/docs/supported-languages) does
+not list PowerShell or SQL. PowerShell policies therefore live in
 [`../PSScriptAnalyzerRules/`](../PSScriptAnalyzerRules/) instead — that
-mechanism is active in the base template today. Secrets are gitleaks; workflow
-security is zizmor.
+mechanism is active in the base template today. Do not infer support merely
+because a parser accepts a language name; verify a positive and negative
+fixture against the current engine. Secrets are gitleaks; workflow security is
+zizmor. The hosted-service trade-offs are recorded in
+[`../overlays/semgrep-pro/README.md`](../overlays/semgrep-pro/README.md).
 
 ## Rules shipped here
 

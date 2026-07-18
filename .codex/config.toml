@@ -13,9 +13,12 @@ sequential task merely to use a cheaper model.
 
 Delegate these named task types:
 
-- **Git commits** → `committer` custom agent (defined in
-  `.codex/agents/committer.toml`). The lead supplies the final commit message
-  and exact file list; the subagent only validates, stages, and commits.
+- **Git commits** are eligible for the `committer` custom agent (defined in
+  `.codex/agents/committer.toml`) when delegation preserves scarce lead
+  context, overlaps useful lead work, or the user requests isolation. For a
+  tiny sequential commit, the lead may commit directly. The lead supplies the
+  final commit message and exact file list; a delegate only validates, stages,
+  and commits. See `docs/token-saving.adoc` for the trade-off.
 - **Codebase recon, log scans, test-failure triage, and dependency scans** →
   `explorer` or a read-focused subagent using the fast, lower-cost model.
   Return conclusions and relevant file references, not raw dumps.

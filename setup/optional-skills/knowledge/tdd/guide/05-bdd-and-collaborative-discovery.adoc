@@ -1,4 +1,4 @@
-# BDD and collaborative discovery
+= BDD and collaborative discovery
 
 The earlier chapters assumed that one behavior could be stated clearly enough to drive a cycle. That is a useful way to learn TDD, but real product work often begins before such clarity exists.
 
@@ -8,7 +8,7 @@ TDD can make a developer's interpretation precise. It cannot, by itself, prove t
 
 Behavior-Driven Development and related practices improve the input to the development loop through shared language, concrete examples, and collaboration.
 
-## Why BDD entered the conversation
+== Why BDD entered the conversation
 
 Dan North developed BDD while looking for better ways to teach and practise TDD. Learners struggled with where to start, what to test, how much to test at once, and how to name tests.
 
@@ -18,15 +18,15 @@ BDD later grew beyond a teaching reformulation. Its practice commonly includes d
 
 It is therefore misleading to call BDD either wholly separate from TDD or merely TDD with renamed tests. They overlap, while BDD places stronger emphasis on collaborative discovery and shared understanding.
 
-## Behavior belongs to a caller
+== Behavior belongs to a caller
 
 The caller of a behavior need not be a person using a browser.
 
-- A customer may use a web application.
-- Another service may use an API.
-- Application code may use a library.
-- An operator may use a command or alert.
-- A reporting system may use a data product.
+* A customer may use a web application.
+* Another service may use an API.
+* Application code may use a library.
+* An operator may use a command or alert.
+* A reporting system may use a data product.
 
 Describe the result in that caller's vocabulary and at a boundary where the caller can observe it.
 
@@ -34,13 +34,13 @@ Describe the result in that caller's vocabulary and at a boundary where the call
 
 The caller perspective does not forbid interaction checks. Requesting a charge exactly once may be part of a component's contract. The check proves the request, not that an external provider settled it.
 
-## Given–When–Then clarifies an example
+== Given–When–Then clarifies an example
 
-BDD examples often use **Given–When–Then**:
+BDD examples often use *Given–When–Then*:
 
-- **Given:** the relevant starting situation;
-- **When:** the event or action under discussion;
-- **Then:** the outcome visible at the chosen boundary.
+* *Given:* the relevant starting situation;
+* *When:* the event or action under discussion;
+* *Then:* the outcome visible at the chosen boundary.
 
 This structure separates context, trigger, and outcome. It can expose an example that combines several behaviors or observes private structure instead of a useful result.
 
@@ -50,20 +50,20 @@ Gherkin and tools such as Cucumber are optional. They earn their cost when scena
 
 A normal test framework is often clearer when developers are the only audience. Tool choice does not determine whether the team is practising BDD.
 
-## Discovery precedes automation
+== Discovery precedes automation
 
 Automation preserves an interpretation. Collaborative discovery tests that interpretation before code makes it expensive.
 
 Useful conversations examine:
 
-- the business rule and its purpose;
-- concrete examples and counterexamples;
-- boundaries, exceptions, and failure outcomes;
-- vocabulary that means the same thing to each participant;
-- unanswered questions and assumptions;
-- evidence needed to know the capability works.
+* the business rule and its purpose;
+* concrete examples and counterexamples;
+* boundaries, exceptions, and failure outcomes;
+* vocabulary that means the same thing to each participant;
+* unanswered questions and assumptions;
+* evidence needed to know the capability works.
 
-The practice often called **Three Amigos** brings product or domain, development, and testing perspectives together. The name describes viewpoints, not a required meeting size or set of job titles.
+The practice often called *Three Amigos* brings product or domain, development, and testing perspectives together. The name describes viewpoints, not a required meeting size or set of job titles.
 
 Each viewpoint asks different questions. Product clarifies value and rules, development exposes technical consequences, and testing searches for ambiguity, boundaries, and missing risks.
 
@@ -71,25 +71,25 @@ Example Mapping is one lightweight way to organize the conversation into a story
 
 An executable scenario is most valuable after this conversation. Automating an unresolved example only makes uncertainty repeatable.
 
-## Related practices overlap without becoming synonyms
+== Related practices overlap without becoming synonyms
 
-**BDD** is a family of discovery, formulation, and automation practices centered on behavior in shared language.
+*BDD* is a family of discovery, formulation, and automation practices centered on behavior in shared language.
 
-**Acceptance Test-Driven Development (ATDD)** clarifies acceptance examples collaboratively before implementation and uses them to guide development.
+*Acceptance Test-Driven Development (ATDD)* clarifies acceptance examples collaboratively before implementation and uses them to guide development.
 
-**Specification by Example** discovers and documents requirements through concrete examples, often retaining selected examples as living specifications.
+*Specification by Example* discovers and documents requirements through concrete examples, often retaining selected examples as living specifications.
 
 All three can produce executable examples and improve the outer input to TDD. Their histories, communities, and emphases differ, so treating them as identical loses useful distinctions.
 
 None requires every conversational example to become an automated test. Automate examples when repeated evaluation and maintenance provide continuing value.
 
-## Outer examples and inner TDD cycles
+== Outer examples and inner TDD cycles
 
 A stakeholder-visible example may be too broad to provide feedback after every code edit. It can still guide a series of smaller cycles.
 
-This pattern is called **double-loop TDD** or an outer acceptance loop with inner TDD cycles.
+This pattern is called *double-loop TDD* or an outer acceptance loop with inner TDD cycles.
 
-**Outside-in TDD** is a broader design direction that begins at a caller-visible boundary and discovers collaborators inward. It can use double loops, but the terms are not synonyms.
+*Outside-in TDD* is a broader design direction that begins at a caller-visible boundary and discovers collaborators inward. It can use double loops, but the terms are not synonyms.
 
 The outer example states a capability at a caller-visible boundary. It helps select the next thin slice and shows when the assembled capability is complete.
 
@@ -97,14 +97,16 @@ Inner Red–Green–Refactor cycles implement one observable behavior at a narro
 
 The loops answer different questions:
 
-| Loop  | Main question                                                                     | Normal cadence                         |
-| ----- | --------------------------------------------------------------------------------- | -------------------------------------- |
-| Outer | Does the stakeholder-visible capability work through the selected broad boundary? | At meaningful slice or assembly points |
-| Inner | Does the next focused behavior work, and can its design be improved safely?       | Repeated during implementation         |
+[cols=",,",options="header",]
+|===
+|Loop |Main question |Normal cadence
+|Outer |Does the stakeholder-visible capability work through the selected broad boundary? |At meaningful slice or assembly points
+|Inner |Does the next focused behavior work, and can its design be improved safely? |Repeated during implementation
+|===
 
 The outer example does not replace focused evidence. Inner checks do not prove assembly. Use both only when each answers a distinct risk.
 
-## Keep the outer loop honest
+== Keep the outer loop honest
 
 An outer example that represents unfinished behavior should not make the required shared suite permanently Red.
 
@@ -114,21 +116,22 @@ When the outer example turns Green, run the standard lane and any thorough evide
 
 If an outer scenario takes days to complete, the inner loop still needs frequent closed cycles. A long-lived target is a planning aid, not permission to leave ordinary TDD cycles Red.
 
-## A bounded collaborative flow
+== A bounded collaborative flow
 
 For a new capability:
 
-1. Identify the caller, desired outcome, and business purpose.
-2. Discover rules, examples, counterexamples, and unanswered questions together.
-3. Formulate one clear outer example when it will guide or verify the work.
-4. Select a thin stakeholder-visible slice.
-5. Implement it through closed inner Red–Green–Refactor cycles.
-6. Revisit the outer example and any questions exposed by implementation.
-7. Retain only evidence whose continuing value justifies its cost.
+[arabic]
+. Identify the caller, desired outcome, and business purpose.
+. Discover rules, examples, counterexamples, and unanswered questions together.
+. Formulate one clear outer example when it will guide or verify the work.
+. Select a thin stakeholder-visible slice.
+. Implement it through closed inner Red–Green–Refactor cycles.
+. Revisit the outer example and any questions exposed by implementation.
+. Retain only evidence whose continuing value justifies its cost.
 
 This flow is not mandatory ceremony. A clear, low-risk rule may need only a short conversation and a focused example.
 
-## What BDD does not replace
+== What BDD does not replace
 
 BDD does not replace product discovery, user research, architecture, exploratory testing, or specialized quality evaluation.
 
@@ -140,12 +143,12 @@ Use collaboration where misunderstanding is a material risk. Use executable scen
 
 The applied chapters show how these ideas behave in greenfield, legacy, and organizational settings. The appendix points to broader practices that complement TDD without belonging to its core loop.
 
-## Sources and further reading
+== Sources and further reading
 
-- Dan North, [Introducing BDD](https://dannorth.net/blog/introducing-bdd/)
-- Dan North, [BDD is like TDD if...](https://dannorth.net/blog/bdd-is-like-tdd-if/)
-- Cucumber, [Behaviour-Driven Development](https://cucumber.io/docs/bdd/)
-- Agile Alliance, [Behavior-Driven Development](https://agilealliance.org/glossary/bdd/)
-- Agile Alliance, [Acceptance Test-Driven Development](https://agilealliance.org/glossary/atdd/)
-- Cucumber, [Example Mapping](https://cucumber.io/docs/bdd/example-mapping/)
-- Steve Freeman and Nat Pryce, [Growing Object-Oriented Software, Guided by Tests](https://www.oreilly.com/library/view/growing-object-oriented-software/9780321574442/)
+* Dan North, https://dannorth.net/blog/introducing-bdd/[Introducing BDD]
+* Dan North, https://dannorth.net/blog/bdd-is-like-tdd-if/[BDD is like TDD if...]
+* Cucumber, https://cucumber.io/docs/bdd/[Behaviour-Driven Development]
+* Agile Alliance, https://agilealliance.org/glossary/bdd/[Behavior-Driven Development]
+* Agile Alliance, https://agilealliance.org/glossary/atdd/[Acceptance Test-Driven Development]
+* Cucumber, https://cucumber.io/docs/bdd/example-mapping/[Example Mapping]
+* Steve Freeman and Nat Pryce, https://www.oreilly.com/library/view/growing-object-oriented-software/9780321574442/[Growing Object-Oriented Software&#44; Guided by Tests]

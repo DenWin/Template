@@ -1,0 +1,130 @@
+= Token-saving options for coding agents
+
+== What is being saved?
+
+Do not treat these as interchangeable. Reducing a main conversation's context
+does *not* necessarily reduce total tokens or cost.
+
+[cols=",,",options="header",]
+|===
+|Objective |Practical levers |Important trade-off
+|Total tokens and API cost |Avoid needless turns, file/log reads, and always-on tools; use a suitable lower-cost model for simple work |Less investigation or reasoning can cause expensive rework.
+|Context-window headroom |Start a fresh task, compact a continuing task, use path-scoped instructions/skills, and isolate noisy work in a subagent |Compaction is lossy; a subagent still consumes its own tokens.
+|Latency |Limit unnecessary tools/context and run independent work concurrently |Parallel agents increase total work and may contend for limits.
+|Quality |Give a precise goal, constraints, acceptance tests, and a small project map |A short but ambiguous prompt often costs _more_ through exploration and retries.
+|===
+
+== High-value practices
+
+[arabic]
+. *Make the first request decision-complete.* State the desired outcome,
+scope, non-goals, relevant files, and verification command. GitHub observes
+that vague tasks force extra inference and exploration, while useful
+instructions can reduce the number of runs needed. This is usually the
+strongest total-token and quality lever. https://docs.github.com/en/copilot/tutorials/optimize-ai-usage[GitHub guidance]
+. *Keep durable guidance small and routed.* For Codex, keep `AGENTS.md`
+concise and add directory-specific routing only where recurring mistakes or
+unnecessary reading justify it. Codex explicitly recommends keeping it small
+and says routing guidance can address excessive document reading.
+https://developers.openai.com/codex/concepts/customization[OpenAI: Customization]
+Copilot CLI similarly cautions that large general instructions can distract
+from the task; use a skill or agent for conditional detail instead.
+https://docs.github.com/en/copilot/concepts/agents/copilot-cli/comparing-cli-features[GitHub: feature comparison]
+. *Use progressive disclosure.* Put specialized procedures, examples, and
+helper scripts in skills, not every-session instructions. Codex loads skill
+details only when needed; Copilot recommends skills for detailed,
+task-specific guidance and custom instructions for short, universal rules.
+https://learn.chatgpt.com/docs/glossary[OpenAI glossary]
+https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-skills[GitHub: agent skills]
+This preserves main-window headroom and can reduce irrelevant input tokens;
+it is not a saving if a broad skill is invoked on every task.
+. *Manage a long thread deliberately.* For unrelated work, start a new
+conversation. For continuing work, compact with a task-specific focus and
+retain a short handoff/plan with decisions and validation state. Copilot CLI
+provides `/context` and `/compact`; Claude Code's `/compact` replaces the
+conversation with a structured summary. https://docs.github.com/en/copilot/tutorials/optimize-ai-usage[GitHub: optimizing AI usage]
+https://code.claude.com/docs/en/context-window[Anthropic: context window]
+This preserves context capacity, but a summary can omit detail, so keep
+source-of-truth decisions in the repository rather than relying on it.
+. *Reduce always-present tool surface.* Enable only the MCP tools/toolsets
+needed for the task: tool definitions consume context. GitHub calls this out
+explicitly, and Claude Code documents that MCP names and skill descriptions
+load before work begins. https://docs.github.com/en/copilot/tutorials/optimize-ai-usage[GitHub: optimizing AI usage]
+https://code.claude.com/docs/en/context-window[Anthropic: context window]
+This reduces input/context and may improve latency; it can reduce quality if
+it removes a necessary source of evidence.
+. *Cap noisy inputs at the source.* Ask tools for a focused path, diff, test
+failure, or log excerpt rather than a repository-wide dump. Where exposed,
+use summarizing tools: GitHub's example skill summarizes failed-job logs
+rather than filling the context with thousands of lines.
+https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-skills[GitHub: agent skills]
+
+== Product-specific notes
+
+* *Codex:* combine a compact `AGENTS.md` with on-demand skills. Codex defines
+context as files, prior messages, tool output, and instructions, and supports
+compaction across its coding surfaces. https://learn.chatgpt.com/docs/glossary[OpenAI glossary]
+Its customization docs say skills keep rich workflows available without
+upfront context bloat. https://developers.openai.com/codex/concepts/customization[OpenAI: Customization]
+For a well-scoped, simple task, lower reasoning can reduce usage at a quality
+risk; conversely, Codex Fast mode is a latency option, not a saving—it uses
+more credits for faster responses. https://learn.chatgpt.com/docs/agent-configuration/speed[OpenAI: Codex speed]
+* *Claude Code:* use `/compact` for a continuing task, `/clear` or a new
+session for a new task, and keep `CLAUDE.md`, auto-memory, MCP, and skill
+setup lean. The context documentation shows these items loading before work
+and explains what compaction retains. https://code.claude.com/docs/en/context-window[Anthropic: context window]
+* *Copilot CLI:* check `/context`, use `/compact` for a long related session,
+and `/new` or `/clear` when switching work. Use minimal custom instructions,
+path-scoped instruction files, and just-in-time skills. https://docs.github.com/en/enterprise-cloud@latest/copilot/concepts/agents/copilot-cli/context-management[GitHub: context management]
+https://docs.github.com/en/copilot/concepts/agents/copilot-cli/comparing-cli-features[GitHub: feature comparison]
+* *GitHub Copilot generally:* improve the repo map and prompt rather than
+attaching broad files repeatedly; context sent to Copilot counts as input
+tokens. https://docs.github.com/en/copilot/tutorials/optimize-ai-usage[GitHub: optimizing AI usage]
+
+== Delegating mechanical commits to a lower-cost subagent
+
+*Conclusion: this chiefly preserves the parent context; it does not normally
+reduce total tokens.* Codex, Claude Code, and Copilot CLI all document that a
+subagent has a separate context window, and Claude Code/Copilot return a
+summary to the parent. https://learn.chatgpt.com/docs/agent-configuration/subagents[OpenAI: Codex subagents]
+https://code.claude.com/docs/en/sub-agents[Anthropic: subagents]
+https://docs.github.com/en/copilot/concepts/agents/copilot-cli/about-custom-agents[GitHub: custom agents]
+
+That isolation keeps `git status`, diffs, staging, hooks, and commit output out
+of the main window, but it adds a new task prompt, agent setup, tool calls, and
+a report. Thus the total-token claim is an inference from the documented
+separate-agent architecture: delegation generally *shifts and adds* context
+rather than eliminating it. A cheaper subagent can lower _monetary_ cost only
+when its per-token price/credit rate is lower; it does not make the work free.
+It can lower elapsed time only when it genuinely runs in parallel with useful
+parent work.
+
+*Recommendation:* keep mechanical commit delegation as an opt-in, narrow
+pattern—not a default. Use it when the parent is doing substantial independent
+work, its context is scarce, or a cheap agent has an explicit file list,
+pre-approved commit message, and no scope decisions. Otherwise, have the main
+agent commit directly. In either case, require the final actor to verify the
+diff, staged paths, hook result, commit SHA, and clean/expected worktree; a
+weak low-cost agent can erase savings through a wrong commit or a repair turn.
+
+== Pinning a larger model or higher reasoning
+
+Codex custom agents may set both `model` and `model_reasoning_effort`; omitted
+values inherit from the parent
+(https://learn.chatgpt.com/docs/agent-configuration/subagents#custom-agents[OpenAI:
+custom agents]). That makes an explicit high-reasoning reviewer or architect a
+valid design. It is wise when the task's error cost and synthesis difficulty
+justify it, not as a blanket setting: higher reasoning spends more budget and a
+pinned model name adds maintenance when catalogs change.
+
+Prefer inheritance for mechanical agents such as a committer. Pin a model only
+when the role genuinely needs a stable capability/cost profile, record why, and
+periodically verify the name. Current Codex documentation describes inheritance
+and overrides but does not promise that an unavailable custom-agent model will
+silently fall back; treat model availability as a validation and maintenance
+responsibility.
+
+For API-backed Claude workflows specifically, model choice, prompt caching, and
+batching are documented monetary levers; batching trades latency for a 50%
+input/output discount, and cache reads are priced below base input tokens.
+https://docs.anthropic.com/en/docs/about-claude/pricing[Anthropic pricing]

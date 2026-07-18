@@ -1,4 +1,4 @@
-# Choosing evidence and feedback lanes
+= Choosing evidence and feedback lanes
 
 The TDD loop tells you when to seek feedback. It does not tell you which parts of the system must participate in each check.
 
@@ -6,11 +6,13 @@ A pricing rule can be driven through a focused test. A transaction rule may need
 
 The governing rule is:
 
-> Prefer the shortest trustworthy feedback loop that faithfully exercises the current risk.
+____
+Prefer the shortest trustworthy feedback loop that faithfully exercises the current risk.
+____
 
 Fast feedback matters only when it is relevant, repeatable, diagnostic, and capable of detecting the failure under discussion.
 
-## Workflow, scope, and fidelity are separate decisions
+== Workflow, scope, and fidelity are separate decisions
 
 TDD is a workflow: express unsupported behavior, observe a meaningful failure, make the behavior work, and improve the design under passing evidence.
 
@@ -22,19 +24,21 @@ Nor does broad scope guarantee realism. A test can traverse many layers while us
 
 Choose the observation boundary from the question and risk. Do not choose it from a preferred label.
 
-## What the common labels usually ask
+== What the common labels usually ask
 
 Teams use test labels differently. Agree on local meanings, but preserve the distinct questions behind them.
 
-| Evidence        | Main question                                                         | Common limitation                                   |
-| --------------- | --------------------------------------------------------------------- | --------------------------------------------------- |
-| Focused or unit | Does one rule or coherent unit of behavior hold at a narrow boundary? | May omit infrastructure and assembly semantics      |
-| Component       | Does a substantial part work through its public boundary?             | May replace external systems or deployment wiring   |
-| Integration     | Do real components or infrastructure collaborate correctly?           | Setup and diagnosis often cost more                 |
-| Contract        | Do independently changing parties agree on exercised interactions?    | Does not prove full provider behavior or deployment |
-| Acceptance      | Does a stakeholder-visible capability satisfy agreed examples?        | May not use a fully deployed production-like path   |
-| E2E or system   | Does an assembled path work from an outside observer's view?          | Usually slower and harder to diagnose               |
-| Smoke           | Is the deployed system basically reachable and operable?              | Intentionally shallow                               |
+[cols=",,",options="header",]
+|===
+|Evidence |Main question |Common limitation
+|Focused or unit |Does one rule or coherent unit of behavior hold at a narrow boundary? |May omit infrastructure and assembly semantics
+|Component |Does a substantial part work through its public boundary? |May replace external systems or deployment wiring
+|Integration |Do real components or infrastructure collaborate correctly? |Setup and diagnosis often cost more
+|Contract |Do independently changing parties agree on exercised interactions? |Does not prove full provider behavior or deployment
+|Acceptance |Does a stakeholder-visible capability satisfy agreed examples? |May not use a fully deployed production-like path
+|E2E or system |Does an assembled path work from an outside observer's view? |Usually slower and harder to diagnose
+|Smoke |Is the deployed system basically reachable and operable? |Intentionally shallow
+|===
 
 A focused test need not mean one method or class. Its unit can be any coherent behavior that is fast to control, observe, and diagnose.
 
@@ -44,24 +48,25 @@ A contract test may be consumer-driven, provider-owned, or schema-based. Its def
 
 An acceptance test concerns agreed capability. An E2E test concerns assembled operation. One test may satisfy both descriptions, but the questions remain useful when deciding what its result proves.
 
-## One behavior can need distinct evidence
+== One behavior can need distinct evidence
 
 Suppose checkout calculates a total, stores an order, requests payment, and shows confirmation.
 
 A useful evidence set might contain:
 
-1. focused examples for pricing and order-state rules;
-2. a database integration test for constraints and transaction behavior;
-3. a contract test for the payment request and expected response;
-4. an acceptance example for the stakeholder-visible outcome;
-5. one E2E check for deployed checkout wiring;
-6. monitoring and reconciliation for real settlement failures.
+[arabic]
+. focused examples for pricing and order-state rules;
+. a database integration test for constraints and transaction behavior;
+. a contract test for the payment request and expected response;
+. an acceptance example for the stakeholder-visible outcome;
+. one E2E check for deployed checkout wiring;
+. monitoring and reconciliation for real settlement failures.
 
 No single item proves the whole behavior. The mock that records a charge request cannot prove settlement. The E2E path need not repeat every pricing partition already established at a cheaper boundary.
 
 Keep evidence when it answers a unique, material question. Remove duplication when a cheaper check answers the same question and the broader check covers no additional risk.
 
-## Evidence fidelity follows the risk
+== Evidence fidelity follows the risk
 
 Use real infrastructure when its semantics are part of the claim. Examples include transactions, SQL collation, serialization, filesystem behavior, queues, framework wiring, and deployed configuration.
 
@@ -71,31 +76,31 @@ If only an integration or E2E test can demonstrate the missing behavior, that sl
 
 You may later add a faster companion test for diagnosis or design feedback. It complements the broader evidence; it does not retroactively prove the broader risk.
 
-## Feedback lanes are execution cadences
+== Feedback lanes are execution cadences
 
 Retained tests become part of the project's verification portfolio. They are not permanently a separate class called “TDD tests.”
 
 How often a check runs is another decision. A focused test can be slow, and an integration test can be fast. Assign lanes from measured cost, reliability, diagnostic value, environment needs, and risk.
 
-### Fast or local lane
+=== Fast or local lane
 
 This lane supports the immediate development loop. It normally includes the new or revised test, nearby deterministic checks, and other tests that return useful local feedback quickly.
 
 Its purpose is not to prove the entire change safe. It keeps each behavioral and structural decision small enough to diagnose.
 
-### Standard or change-validation lane
+=== Standard or change-validation lane
 
 This lane establishes confidence in the affected area before handoff or integration. It can include the changed module, relevant components, integrations, and contracts.
 
 Its composition should follow change impact. “Standard” means the team's normal evidence for a change, not every check in the repository.
 
-### Thorough or system-validation lane
+=== Thorough or system-validation lane
 
 This lane supplies broader evidence before a risky transition. It may include the full relevant suite, E2E paths, environment-dependent checks, and specialized quality evaluation.
 
 Typical triggers are merge, release, infrastructure change, high-impact migration, or a scheduled verification run. The trigger depends on project risk and delivery design.
 
-## Do not impose universal time limits
+== Do not impose universal time limits
 
 A five-second suite may feel slow in one inner loop and excellent in another system. A ten-minute suite may be acceptable before merge but unusable after every edit.
 
@@ -103,22 +108,23 @@ Measure actual duration and feedback delay. Then give each lane a project-specif
 
 Revisit the classification as tests, infrastructure, and risks change. A lane is an operating agreement, not an intrinsic property stored forever in a test name.
 
-## Cadence through a TDD change
+== Cadence through a TDD change
 
 Use the lanes without weakening the Red–Green–Refactor invariants:
 
-1. Before Red, run the smallest relevant baseline or record known failures.
-2. For Red, run the new or revised test and inspect its expected failure.
-3. For Green, run that test plus nearby fast regressions.
-4. During refactoring, rerun the fast lane after each meaningful structural step.
-5. Before handoff or integration, run the standard lane.
-6. Before the applicable risky transition, run the thorough lane.
+[arabic]
+. Before Red, run the smallest relevant baseline or record known failures.
+. For Red, run the new or revised test and inspect its expected failure.
+. For Green, run that test plus nearby fast regressions.
+. During refactoring, rerun the fast lane after each meaningful structural step.
+. Before handoff or integration, run the standard lane.
+. Before the applicable risky transition, run the thorough lane.
 
 If the faithful Red is slow, run it when the behavior changes and use faster supporting checks between those runs. Never claim the slow risk is verified when only its companion checks ran.
 
 Report which lanes and commands ran, their results, which broader evidence did not run, and the uncertainty that remains.
 
-## Continuous integration extends the feedback loop
+== Continuous integration extends the feedback loop
 
 Local lanes help one developer. Continuous integration tests whether the combined work still agrees at the team boundary.
 
@@ -130,23 +136,23 @@ An unfinished outer example can remain pending, branch-local, or excluded from r
 
 Do not rerun a flaky lane until it happens to pass. Diagnose or explicitly isolate the unreliable check, record the lost evidence, and restore trust promptly.
 
-## A practical selection checklist
+== A practical selection checklist
 
 Before adding or assigning a check, ask:
 
-- What incorrect behavior or risk must this evidence detect?
-- At which boundary can that outcome be controlled and observed?
-- Which real semantics must participate for the result to be faithful?
-- Is a cheaper check already answering the same question?
-- How quickly and reliably does this check return diagnostic feedback?
-- In which lane will its result influence a useful decision?
+* What incorrect behavior or risk must this evidence detect?
+* At which boundary can that outcome be controlled and observed?
+* Which real semantics must participate for the result to be faithful?
+* Is a cheaper check already answering the same question?
+* How quickly and reliably does this check return diagnostic feedback?
+* In which lane will its result influence a useful decision?
 
 The next chapter addresses an earlier question: how a team discovers and expresses the behavior that these checks should evaluate.
 
-## Sources and further reading
+== Sources and further reading
 
-- Martin Fowler, [Test-Driven Development](https://martinfowler.com/bliki/TestDrivenDevelopment.html)
-- Martin Fowler, [The Practical Test Pyramid](https://martinfowler.com/articles/practical-test-pyramid.html)
-- Pact, [Introduction to contract testing](https://docs.pact.io/)
-- Jez Humble, [Continuous Delivery](https://continuousdelivery.com/)
-- Kent Beck, [TDD is Kanban for Code](https://newsletter.kentbeck.com/p/tdd-is-kanban-for-code)
+* Martin Fowler, https://martinfowler.com/bliki/TestDrivenDevelopment.html[Test-Driven Development]
+* Martin Fowler, https://martinfowler.com/articles/practical-test-pyramid.html[The Practical Test Pyramid]
+* Pact, https://docs.pact.io/[Introduction to contract testing]
+* Jez Humble, https://continuousdelivery.com/[Continuous Delivery]
+* Kent Beck, https://newsletter.kentbeck.com/p/tdd-is-kanban-for-code[TDD is Kanban for Code]

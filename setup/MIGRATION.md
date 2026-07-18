@@ -11,25 +11,27 @@ first. [`CHANGELOG.md`](CHANGELOG.md) has the version history.
 
 This file lives in `setup/` alongside the one-time setup tooling — it's only
 needed during the migration, so it goes away with the rest of the folder when
-`Complete-Setup.ps1` runs (step 12).
+`Complete-Setup.ps1` runs (step 13).
 
 ## The concepts you're migrating
 
-| #  | Concept             | Lives in                           | Doc                                                                      |
-| -- | ------------------- | ---------------------------------- | ------------------------------------------------------------------------ |
-| 1  | Orchestration       | `.pre-commit-config.yaml` (root)   | [`/AGENTS.md`](../AGENTS.md) + inline comments                           |
-| 2  | Configs             | `.config/`                         | [`/.config/README.md`](../.config/README.md)                             |
-| 3  | Linting & testing   | `.config/scripts/`                 | [`/.config/scripts/README.md`](../.config/scripts/README.md)             |
-| 4  | Policy rules        | `.config/PSScriptAnalyzerRules/`   | [`/.config/scripts/README.md`](../.config/scripts/README.md)             |
-| 5  | Opt-in tooling      | `.config/overlays/`                | [`/.config/overlays/vale/README.md`](../.config/overlays/vale/README.md) |
-| 6  | CI & automation     | `.github/`                         | [`/.github/README.md`](../.github/README.md)                             |
-| 7  | Editor integration  | `.vscode/`                         | [`/.vscode/README.md`](../.vscode/README.md)                             |
-| 8  | Documentation graph | Markdown docs + README indexes     | [`/docs/knowledge-format.md`](../docs/knowledge-format.md)               |
-| 9  | AI delegation       | `AGENTS.md`, `.claude/`, `.codex/` | [`/CLAUDE.md`](../CLAUDE.md) + tool-specific config                      |
-| 10 | One-time repo setup | `setup/` (delete after use)        | [`README.md`](README.md)                                                 |
+| #  | Concept             | Lives in                           | Doc                                                            |
+| -- | ------------------- | ---------------------------------- | -------------------------------------------------------------- |
+| 1  | Orchestration       | `.pre-commit-config.yaml` (root)   | [`/AGENTS.md`](../AGENTS.md) + inline comments                 |
+| 2  | Configs             | `.config/`                         | [`/.config/README.md`](../.config/README.md)                   |
+| 3  | Linting & testing   | `.config/scripts/`                 | [`/.config/scripts/README.md`](../.config/scripts/README.md)   |
+| 4  | Policy rules        | `.config/PSScriptAnalyzerRules/`   | [`/.config/scripts/README.md`](../.config/scripts/README.md)   |
+| 5  | Opt-in tooling      | `.config/overlays/`                | [`/.config/overlays/README.md`](../.config/overlays/README.md) |
+| 6  | CI & automation     | `.github/`                         | [`/.github/README.md`](../.github/README.md)                   |
+| 7  | Editor integration  | `.vscode/`                         | [`/.vscode/README.md`](../.vscode/README.md)                   |
+| 8  | Documentation graph | Markdown/AsciiDoc + README indexes | [`/docs/knowledge-format.md`](../docs/knowledge-format.md)     |
+| 9  | AI delegation       | `AGENTS.md`, `.claude/`, `.codex/` | [`/CLAUDE.md`](../CLAUDE.md) + tool-specific config            |
+| 10 | Optional AI skills  | `setup/optional-skills/`           | [`optional-skills/README.adoc`](optional-skills/README.adoc)   |
+| 11 | One-time repo setup | `setup/` (delete after use)        | [`README.md`](README.md)                                       |
 
-Root convention files ride along as-is and need no adaptation:
-`.editorconfig`, `.gitattributes` (`eol=lf`), `.gitignore`, `.claudeignore`.
+Root convention files provide defaults: `.editorconfig`, `.gitattributes`
+(`eol=lf`), `.gitignore`, and `.claudeignore`. Copy them, then adapt ignore and
+unignore rules to the target repository's languages and tracked editor files.
 
 ## Migration steps
 
@@ -78,10 +80,11 @@ repo's root.
    *Done when:* no check exists twice, and the test lanes
    (`Invoke-TestLane.ps1 -Lane Fast`) run green or report "no tests".
 
-5. **Bring opt-in tooling across as inert overlays** (concept 5) — Vale,
-   semgrep, or anything else the source repo added as "complete but not
-   wired." Copy the folder and its `precommit-hook.yaml` fragment; don't paste
-   the fragment into the root config unless you're activating it now.
+5. **Bring opt-in tooling across as inert overlays** (concept 5) — start from
+   `.config/overlays/README.md`, then select Vale, Semgrep, or another relevant
+   overlay. Follow the selected overlay's structure; some carry a
+   `precommit-hook.yaml` fragment, while documentation-only decision records do
+   not. Do not activate a fragment unless the target needs it now.
    *Done when:* overlays exist but `pre-commit run --all-files` doesn't run
    them.
 
@@ -107,9 +110,10 @@ repo's root.
 
 8. **Adopt the documentation graph** (concept 8). Copy
    `docs/knowledge-format.md` and adapt its deliberately reduced OKF-inspired
-   conventions to the target. Keep normal Markdown links between documents,
-   use README files as directory indexes where progressive disclosure helps,
-   and cite external claims. Do not add mandatory frontmatter, reserved
+   conventions to the target. Treat Markdown and AsciiDoc as first-class:
+   use each format's native relative links/cross-references, use README files as
+   directory indexes where progressive disclosure helps, and cite external
+   claims. Do not add mandatory frontmatter, reserved
    `index.md`/`log.md` semantics, or an OKF conformance claim unless the target
    is intentionally becoming an exchangeable knowledge bundle.
    *Done when:* permanent docs are reachable from `AGENTS.md` or a linked
@@ -120,13 +124,25 @@ repo's root.
    layers the target uses: `CLAUDE.md` and `.claude/agents/` for Claude Code;
    `.codex/config.toml` and `.codex/agents/` for Codex. Adapt model names and
    supported capabilities rather than copying them blindly. Keep
-   product-specific policy out of `AGENTS.md`: Claude imports the shared file,
+   shared principles in `AGENTS.md`, but keep product-only model names and
+   mechanics in their product entry points. Claude imports the shared file,
    while Codex reads it directly and adds its own `developer_instructions`
-   from `.codex/config.toml` in trusted projects.
+   from `.codex/config.toml` in trusted projects. Review
+   [`docs/token-saving.adoc`](../docs/token-saving.adoc) before making
+   mechanical commit delegation a default; it usually preserves parent context
+   rather than reducing total tokens.
    *Done when:* every retained product entry point loads the shared guidance,
    every referenced custom agent exists, and no unused product layer remains.
 
-10. **Copy the remaining docs.** Bring over the per-folder READMEs, trimmed to
+10. **Copy optional AI skills only when needed** (concept 10). Read
+    [`optional-skills/README.adoc`](optional-skills/README.adoc), install a
+    bundled skill only when the target agent has no equivalent, and copy the
+    complete skill directory with its runtime references. Copy the human TDD
+    knowledge base only when the target should retain that learning material.
+    *Done when:* each retained skill loads in the target agent and no duplicate
+    equivalent skill was installed.
+
+11. **Copy the remaining docs.** Bring over the per-folder READMEs, trimmed to
     the target repo's actual tools, and update them to reflect what you
     migrated. Purge phantoms: verify every referenced tool exists in the
     target repo (e.g. there is no `asciidoctor-lint` gem — use
@@ -134,21 +150,22 @@ repo's root.
     lists a nonexistent tool is worse than no doc.
     *Done when:* every tool named in a doc can be invoked in the target repo.
 
-11. **Copy and run the one-time setup tooling** (concept 10) after the first
+12. **Copy and run the one-time setup tooling** (concept 11) after the first
     push and one CI run (so the `lint` check the ruleset requires actually
     exists): copy the whole `setup/` folder (including this file and
-    `optional-skills/` — install the bundled `develop-with-tdd` skill only if
-    no equivalent TDD skill exists), then follow
+    `optional-skills/` only if step 10 needs it), then follow
     [`README.md`](README.md) — protection, security settings, AI-maintainer
     identity, in that order.
     **If the target repo is owned by a personal/user account** (not an
-    organization), expect `merge_queue` to be rejected by GitHub — a platform
-    limitation, not a bug. `Protect-MainBranch.ps1` posts each rule as its own
-    ruleset for exactly this reason: the other four protections still land.
+    organization), expect `merge_queue` to be rejected by GitHub — a
+    [documented availability constraint](https://docs.github.com/en/enterprise-cloud@latest/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-a-merge-queue),
+    not a bug. Use a GitHub App rather than a separate collaborator account's
+    fine-grained PAT. `Protect-MainBranch.ps1` posts each rule as its own
+    ruleset for exactly this reason: the other protections still land.
     *Done when:* the rulesets appear in repo settings and
     `Test-AIMaintainerIdentity.ps1` passes from the agent's shell.
 
-12. **Finish.** Delete the reference copy (`.temp/template/`), then run
+13. **Finish.** Delete the reference copy (`.temp/template/`), then run
     `pwsh -NoProfile -File setup/Complete-Setup.ps1` — it removes `setup/`
     and opens the removal PR (and refuses to run if the repo is itself a
     template repo).

@@ -1,0 +1,106 @@
+= `develop-with-tdd` forward evaluation
+
+Date: 2026-07-13
+
+Fresh-context agents received only the skill path and task descriptions. They did not receive the expected answers or this analysis. No files were edited.
+
+== Evaluation criteria
+
+Each scenario was checked for:
+
+* behavior, observation-boundary, oracle, and level framing;
+* a relevant Red signal before production change;
+* minimal coherent Green behavior;
+* a behavior-preserving refactor boundary;
+* repository-aware verification;
+* correct separation of defaults from product or project decisions;
+* explicit limits on what the proposed test proves.
+
+== Results
+
+[cols=",,",options="header",]
+|===
+|Scenario |Key behavior observed |Result
+|Greenfield shipping boundary |Used exact decimal examples, drove below-threshold then inclusive boundary, and requested the missing paid-tier price |Pass
+|Percentage-parser regression |Reproduced “did not raise,” guarded the numeric rule, and treated zero as a possibly first-run-passing boundary probe |Pass
+|Untested legacy invoice function |Characterized only behavior at risk, separated tax-rule decisions from observed quirks, and deferred extraction until green |Pass
+|EF Core uniqueness semantics |Rejected SQLite as the oracle for SQL Server collation and identified database constraint/concurrency decisions |Pass
+|London/mockist order placement |Followed the repository’s interaction style, avoided claiming external effects occurred, and surfaced atomicity decisions |Pass
+|Randomized retry jitter |Injected a narrow random seam, tested bounds, distinguished jitter algorithms, and separated bounded examples from distribution evidence |Pass
+|===
+
+== Findings
+
+The rule-strength taxonomy and self-contained operating reference were reached reliably. No scenario exposed a conflicting instruction or premature completion criterion.
+
+The evaluation also confirmed two useful behaviors not visible in metadata validation:
+
+* the skill asks for genuinely missing product decisions while recovering framework and repository facts itself;
+* it states the assurance boundary of each test instead of inflating a focused check into system-level proof.
+
+== Limitation
+
+These evaluations tested decision process and proposed cycles against hypothetical tasks. They did not execute against six real repositories. Future changes to stack-sensitive branches should add artifact-based evaluations with runnable fixtures.
+
+== Progressive-disclosure evaluation
+
+A further fresh-context evaluation exercised the new test-design, test-level, and testability references.
+
+For checkout, the agent selected focused domain, SQL Server integration, consumer-contract, and one browser E2E example. Each had a distinct assurance boundary; the agent refused to claim settlement from a mock or contract.
+
+For hard-to-test service code, it moved SDK and clock construction to the composition root, exposed an outcome, kept deterministic helpers together under classicist TDD, and used role-shaped collaborators under London TDD.
+
+Result: pass. The agent loaded the conditional material and avoided one-interface-per-helper design damage.
+
+== Observation-boundary synchronization evaluation
+
+After synchronizing terminology with the human documentation, a fresh-context agent received a legacy `OrderService` task involving an internally constructed clock and payment SDK.
+
+The agent selected the public `requestPayment` operation as the observation boundary. It introduced clock and payment seams only to control the legacy dependencies, rather than treating the boundary itself as a seam.
+
+It also chose focused component evidence, derived the 30-minute oracle independently, and did not claim that a payment double proved settlement.
+
+Result: pass. The revised terminology changed the decision process as intended.
+
+== Invariant, entry-strategy, and feedback-lane evaluation
+
+Date: 2026-07-14
+
+Fresh-context agents received the skill path and a self-contained hypothetical project description. They were told to inspect only the skill package, make no edits, and report execution honestly.
+
+Two initial prompts accidentally matched examples in the human curriculum and were discarded before evaluation. The replacement prompts used different domains and no expected decisions.
+
+[cols=",,",options="header",]
+|===
+|Scenario |Observed behavior |Result
+|Greenfield age-eligibility HTTP service |Asked for the missing request contract, selected the in-process HTTP boundary, used 17/18 to expose the inclusive rule, avoided mocks, designed measured fast/standard/thorough lanes, and reported that nothing ran |Pass
+|Legacy report publisher with hard-wired SFTP |Used the existing smoke check as baseline, introduced a minimal Green-to-Green factory seam, rejected credential failure as Red, used an exploding factory plus returned outcome as the oracle, and preserved non-empty behavior |Pass
+|Wallet withdrawal contract change |Preserved the EUR 100 example, moved the obsolete rejection boundary to EUR 201, added EUR 200 as the discriminating Red, treated the already-Green EUR 201 case as regression evidence, and retained assertion strength |Pass
+|Dashboard visual exploration plus navigation rule |Kept subjective clarity in disposable user-evaluated spikes, refused to claim a winner without evidence, and isolated the deterministic empty-state navigation for a normal TDD cycle |Pass
+|Pure PriceCalculator refactoring |Began from a Green public-boundary baseline, manufactured no Red, kept the private helper untested directly, and required fast evidence after structural steps plus broader validation before completion |Pass
+|===
+
+=== What the evaluation exercised
+
+* observed Red rather than inferred Red;
+* known baselines and explicit environmental limitations;
+* independent and outcome-complete oracles;
+* intentional contract changes using added or revised evidence;
+* seam-before-characterization preparation without manufacturing Red;
+* pure-refactor and no-useful-oracle branches without manufactured Red;
+* slower or broader evidence retained for its unique risk;
+* feedback lanes separated from test levels;
+* repository-wide lane and gate changes treated as team decisions;
+* honest completion when no command was actually executed.
+
+=== Progressive-disclosure result
+
+The agents reached entry strategies for greenfield, legacy, and contract-change branches. Feedback-lane and broader-test material appeared only in the greenfield scenario where cadence and a process smoke test mattered.
+
+The core invariants remained visible without loading the explanatory operating reference.
+
+Result: pass.
+
+=== Remaining limitation
+
+These scenarios evaluated decisions and reporting against hypothetical projects. They did not execute a runnable fixture, so stack-specific command correctness remains covered only by future artifact-based evaluations.

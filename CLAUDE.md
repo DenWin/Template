@@ -10,13 +10,15 @@ defines the TDD workflow and where the bundled skill lives.
 
 Reserve the lead model (Fable/Opus) for reasoning-heavy work: architecture,
 debugging, code review, and anything touching `.pre-commit-config.yaml`
-semantics or policy rules. Delegate the following **named task types** to
-cheaper models via the Task tool instead of doing them inline:
+semantics or policy rules. Delegate the following **named task types** when
+isolation or parallel work justifies the extra tokens; the trade-off is recorded
+in [the token-saving knowledge base](docs/token-saving.adoc):
 
-- **Git commits** → `committer` subagent (haiku, defined in
-  `.claude/agents/committer.md`). The lead model writes the commit message
-  and passes it plus the explicit file list in the delegation prompt; the
-  subagent only stages and commits.
+- **Git commits** are eligible for the `committer` subagent (haiku, defined in
+  `.claude/agents/committer.md`) when it preserves scarce lead context,
+  overlaps useful lead work, or the user requests isolation. For a tiny
+  sequential commit, the lead may commit directly. The lead writes the commit
+  message and explicit file list; the subagent only stages and commits.
 - **PR descriptions / `gh pr create`** → general-purpose subagent,
   `model: sonnet`. Must fill every section of
   `.github/pull_request_template.md`, including Evidence.

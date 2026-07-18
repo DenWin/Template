@@ -8,6 +8,38 @@ until one is cut. Rationale lives with each mechanism's doc
 ([`/AGENTS.md`](../AGENTS.md), per-folder READMEs, script headers) — this file
 records only what changed.
 
+## [0.4.0]
+
+### Added
+
+- `New-AIMaintainerToken.ps1` for cryptographically signed,
+  repository-scoped GitHub App installation tokens.
+- Teardown markers and permanent-document cleanup in `Complete-Setup.ps1`.
+- Indexes for optional skills, overlays, and permanent docs.
+- A sourced token-saving knowledge base and three retained TDD assessment
+  artifacts.
+
+### Changed
+
+- The complete human TDD knowledge base is now AsciiDoc; runtime skill files
+  remain Markdown.
+- Markdown and AsciiDoc follow the same reduced OKF-inspired documentation
+  convention.
+- Mechanical committer delegation is opt-in when isolation or parallel work
+  justifies its additional tokens.
+- AI-maintainer guidance now recommends GitHub Apps for personal repositories,
+  documents fine-grained PAT collaborator limits, and distinguishes local
+  commit signing from API-created bot verification.
+- The migration runbook covers the updated documentation, overlay, optional
+  skill, and AI-maintainer mechanisms.
+
+### Fixed
+
+- `Complete-Setup.ps1` now verifies the AI-maintainer identity and removes
+  dangling `setup/` references from permanent documents.
+- Semgrep and GitHub behavior claims now link to current primary sources and no
+  longer present historical Windows or plan constraints as universal.
+
 ## [0.3.0]
 
 ### Added

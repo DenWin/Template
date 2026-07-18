@@ -12,9 +12,10 @@
 
       1. FAILSAFE: aborts if the repo is a template repo (`isTemplate`), so the
          template itself never loses its setup tooling,
-      2. aborts on a dirty worktree, so the PR contains only the removal,
-      3. branches, `git rm -r setup`, commits, pushes, and opens a PR whose
-         body fills the repo's PR template (Evidence included).
+      2. aborts on a dirty worktree or unsafe AI-maintainer identity,
+      3. branches, removes template-only references from permanent docs,
+         runs `git rm -r setup`, commits, pushes, and opens a PR whose body
+         fills the repo's PR template (Evidence included).
 
     Requires the GitHub CLI, authenticated with push access, run from the
     repo root.
@@ -30,6 +31,63 @@ param(
 Set-StrictMode -Version Latest
 
 function Test-GhCli { [bool](Get-Command gh -ErrorAction SilentlyContinue) }
+
+function Test-AIMaintainerPrecondition {
+    param([string]$RepositoryRoot = (Get-Location).Path)
+
+    $identityScript = Join-Path $RepositoryRoot 'setup' 'Test-AIMaintainerIdentity.ps1'
+    if (-not (Test-Path -LiteralPath $identityScript -PathType Leaf)) {
+        Write-Error "Identity verifier not found: $identityScript"
+        return $false
+    }
+
+    & pwsh -NoProfile -File $identityScript
+    return $LASTEXITCODE -eq 0
+}
+
+function Remove-TemplateOnlyDocumentation {
+    <# Remove content explicitly marked as useful only while setup/ exists.
+       Markers let downstream repos customize the surrounding documents
+       without this script replacing whole files. Returns changed paths. #>
+    [CmdletBinding(SupportsShouldProcess)]
+    param(
+        [string]$RepositoryRoot = (Get-Location).Path,
+        [string[]]$RelativePaths = @(
+            'AGENTS.md',
+            'README.md',
+            '.github/README.md',
+            '.github/CODEOWNERS',
+            '.config/scripts/README.md'
+        )
+    )
+
+    $changed = [System.Collections.Generic.List[string]]::new()
+    $blockPattern = '(?ms)^[ \t]*<!-- setup-teardown:template-only:start -->\r?\n.*?^[ \t]*<!-- setup-teardown:template-only:end -->\r?\n?'
+    $linePattern = '(?m)^.*(?:<!-- setup-teardown:template-only -->|# setup-teardown:template-only).*(?:\r?\n|$)'
+
+    foreach ($relativePath in $RelativePaths) {
+        $path = Join-Path $RepositoryRoot $relativePath
+        if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+            continue
+        }
+
+        $original = [System.IO.File]::ReadAllText($path)
+        $updated = [regex]::Replace($original, $blockPattern, '')
+        $updated = [regex]::Replace($updated, $linePattern, '')
+
+        if ($updated -ne $original -and
+            $PSCmdlet.ShouldProcess($path, 'Remove template-only documentation')) {
+            [System.IO.File]::WriteAllText(
+                $path,
+                $updated,
+                [System.Text.UTF8Encoding]::new($false)
+            )
+            $changed.Add($relativePath)
+        }
+    }
+
+    $changed
+}
 
 function Test-RemovalAllowed {
     <# The template failsafe (pure; no side effects): a template repo keeps its
@@ -56,13 +114,15 @@ in place.
 
 ## Scope
 
-Deletes `setup/` only. No other file changes.
+Deletes `setup/` and removes its template-only references from permanent
+documentation and `CODEOWNERS`.
 
 ## Risk & rollback
 
-Low — the folder is inert documentation/tooling once setup ran; nothing
-references it at runtime. Rollback: revert this PR (the folder is preserved in
-history and in the upstream template).
+Low — the folder is inert documentation/tooling once setup ran. The permanent
+document edits only remove references that would otherwise become stale.
+Rollback: revert this PR (the folder is preserved in history and in the
+upstream template).
 
 ## Evidence
 
@@ -101,11 +161,32 @@ function Invoke-SetupRemoval {
         return 1
     }
 
+    if (-not (Test-AIMaintainerPrecondition)) {
+        Write-Error 'AI-maintainer identity verification failed — setup will not be removed.'
+        return 1
+    }
+
     git switch -c $BranchName
     if ($LASTEXITCODE -ne 0) {
         Write-Error "Could not create branch '$BranchName' (does it already exist?)."
         return 1
     }
+
+    try {
+        $updatedDocs = @(Remove-TemplateOnlyDocumentation)
+    }
+    catch {
+        Write-Error "Could not clean template-only documentation: $($_.Exception.Message)"
+        return 1
+    }
+    if ($updatedDocs.Count -gt 0) {
+        git add -- @updatedDocs
+        if ($LASTEXITCODE -ne 0) {
+            Write-Error 'Staging permanent-document cleanup failed.'
+            return 1
+        }
+    }
+
     git rm -r -q -- setup
     if ($LASTEXITCODE -ne 0) {
         Write-Error 'git rm -r setup failed — is the working directory the repo root?'

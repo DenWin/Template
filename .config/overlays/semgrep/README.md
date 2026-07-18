@@ -8,18 +8,20 @@ paste it in.
 ## Why activation is opt-in, not core
 
 It was briefly wired in as an active hook + scheduled CI workflow and then
-reverted. Two real frictions drove that:
+reverted. Two practical frictions drove that:
 
-- **The managed pre-commit hook does not work on Windows** — pre-commit clones
-  semgrep's own git repo, which contains case-colliding paths that fail
-  checkout on NTFS. The `repo: local` PyPI-wheel workaround below fixes it but
-  adds install weight and a `require_serial: true` workaround for a
-  `~/.semgrep/settings.yml` race between parallel instances.
-- **Its language coverage has real gaps for this template's stack**: SQL has
-  no support at any tier; **PowerShell parses but Pro-gates rule execution**
-  (free CLI silently reports 0 findings — see
-  [`../semgrep-pro/README.md`](../semgrep-pro/README.md)), and Pro is capped at
-  10 repos account-wide — unsuitable for a template cloned into many repos.
+- An earlier Windows test of Semgrep's managed pre-commit repository checkout
+  failed on case-colliding paths. This overlay therefore retains a
+  `repo: local` PyPI installation. Semgrep added native Windows support in
+  2025 and now recommends `pipx` on Windows, so this historical managed-hook
+  failure should be revalidated before treating it as a current platform
+  limitation ([Semgrep installation guidance](https://semgrep.dev/docs/update),
+  [native Windows announcement](https://semgrep.dev/blog/2025/semgrep-community-edition-fall-release-2025)).
+- This template is PowerShell-heavy, while Semgrep's current supported-language
+  table does not list PowerShell or SQL. The shipped local rules cover only
+  languages that were actually verified here; PSScriptAnalyzer remains the
+  PowerShell policy engine
+  ([Semgrep supported languages](https://semgrep.dev/docs/supported-languages)).
 
 None of that makes semgrep *bad* — the shipped rules are verified and work —
 but it does not clear the bar for base-template tooling every clone inherits by
@@ -32,8 +34,8 @@ default. Tracking issue for a replacement evaluation:
 2. **Wire the hook** — paste the block from
    [`precommit-hook.yaml`](precommit-hook.yaml) into the `repos:` list of
    [`/.pre-commit-config.yaml`](../../../.pre-commit-config.yaml). It installs
-   from PyPI as a `repo: local` hook (not the managed `repo:` clone, which
-   fails on Windows — see above).
+   from PyPI as a `repo: local` hook, preserving the configuration that was
+   verified on this repository.
 3. **Verify** — `semgrep scan --config .config/semgrep/rules --metrics=off .`
    should run clean, or report only intended findings.
 

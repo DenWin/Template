@@ -66,6 +66,7 @@ Describe 'Save-AppCredential' -Tag 'Fast' {
     }
 
     It 'writes the private key next to nothing else and returns its path' {
+        Mock Protect-PrivateKeyFile {}
         $dir = Join-Path $TestDrive 'keys'
         $app = @{ id = 42; slug = 'my-bot'; pem = $script:FakePrivateKey }
         $path = Save-AppCredential -App $app -OutputDirectory $dir
