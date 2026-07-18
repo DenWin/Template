@@ -16,18 +16,18 @@ PRs, full at the merge gate.
 
 ## Mechanism map
 
-| Mechanism           | Where                               | Doc                                                                  |
-| ------------------- | ----------------------------------- | -------------------------------------------------------------------- |
-| Orchestration       | `.pre-commit-config.yaml` (root)    | this file + inline comments                                          |
-| Configs             | `.config/`                          | [`.config/README.md`](.config/README.md)                             |
-| Linting & testing   | `.config/scripts/`                  | [`.config/scripts/README.md`](.config/scripts/README.md)             |
-| CI & automation     | `.github/`                          | [`.github/README.md`](.github/README.md)                             |
-| Editor integration  | `.vscode/`                          | [`.vscode/README.md`](.vscode/README.md)                             |
-| Policy rules        | `.config/PSScriptAnalyzerRules/`    | [`.config/scripts/README.md`](.config/scripts/README.md)             |
-| Opt-in tooling      | `.config/overlays/`                 | [`.config/overlays/vale/README.md`](.config/overlays/vale/README.md) |
-| AI delegation       | `.claude/agents/`, `.codex/agents/` | this file + [`CLAUDE.md`](CLAUDE.md)                                 |
-| One-time repo setup | `setup/` (delete after use)         | [`setup/README.md`](setup/README.md)                                 |
-| Optional AI skills  | `setup/optional-skills/`            | [`setup/README.md`](setup/README.md)                                 |
+| Mechanism           | Where                            | Doc                                                                  |
+| ------------------- | -------------------------------- | -------------------------------------------------------------------- |
+| Orchestration       | `.pre-commit-config.yaml` (root) | this file + inline comments                                          |
+| Configs             | `.config/`                       | [`.config/README.md`](.config/README.md)                             |
+| Linting & testing   | `.config/scripts/`               | [`.config/scripts/README.md`](.config/scripts/README.md)             |
+| CI & automation     | `.github/`                       | [`.github/README.md`](.github/README.md)                             |
+| Editor integration  | `.vscode/`                       | [`.vscode/README.md`](.vscode/README.md)                             |
+| Policy rules        | `.config/PSScriptAnalyzerRules/` | [`.config/scripts/README.md`](.config/scripts/README.md)             |
+| Opt-in tooling      | `.config/overlays/`              | [`.config/overlays/vale/README.md`](.config/overlays/vale/README.md) |
+| AI delegation       | `.claude/`, `.codex/`            | [`CLAUDE.md`](CLAUDE.md) + tool-specific config                      |
+| One-time repo setup | `setup/` (delete after use)      | [`setup/README.md`](setup/README.md)                                 |
+| Optional AI skills  | `setup/optional-skills/`         | [`setup/README.md`](setup/README.md)                                 |
 
 Root convention files are declarative and self-documenting: `.editorconfig`
 (style), `.gitattributes` (eol=lf), `.gitignore`, `.claudeignore`.
@@ -57,40 +57,6 @@ in the repo, or `~/.claude/skills/` for all repos), or follow its `SKILL.md`
 in place. The bundle is deleted with the rest of `setup/` at the end of
 bootstrap — install it *before* running `Complete-Setup.ps1` if you want to
 keep it.
-
-## Model delegation (Codex)
-
-Keep the lead agent responsible for requirements, architecture, debugging,
-review conclusions, and changes to hook or policy configuration. Use Codex
-subagents only for bounded work that benefits from isolation or can run
-independently; subagents consume extra tokens, so do not delegate a tiny
-sequential task merely to use a cheaper model.
-
-Delegate these named task types:
-
-- **Git commits** → `committer` custom agent (defined in
-  `.codex/agents/committer.toml`). The lead supplies the final commit message
-  and exact file list; the subagent only validates, stages, and commits.
-- **Codebase recon, log scans, test-failure triage, and dependency scans** →
-  `explorer` or a read-focused subagent using the fast, lower-cost model.
-  Return conclusions and relevant file references, not raw dumps.
-- **Independent lint or test lanes** → one subagent per lane when they can run
-  concurrently. Report failures verbatim and fix nothing.
-- **Web recon and research summaries** → a read-focused subagent using the
-  fast model; use the lead model when conclusions require cross-source
-  judgment.
-- **Boilerplate, doc drafts, and PR-description drafts** → a worker subagent
-  using the fast model and a lead-provided outline or finished facts. The lead
-  reviews the result and retains responsibility for correctness.
-- **Mechanical GitHub chores** → a worker subagent using lead-authored text.
-  Do not delegate decisions about scope, labels, reviewers, or readiness.
-
-Prefer parallel subagents for independent read-heavy work. Serialize
-write-heavy tasks that touch the same files. Never delegate cross-file
-refactors, final review judgment, or edits to `.pre-commit-config.yaml` and
-policy rules. When a recurring task needs stricter instructions or a pinned
-model, add a project-scoped `.codex/agents/<name>.toml`; keep one-off
-delegation in the lead's prompt.
 
 ## Reuse: prefer an include over a copy; a symlink only when no include exists
 
