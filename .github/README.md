@@ -3,6 +3,23 @@
 Continuous integration and GitHub-hosted automation. See [`/AGENTS.md`](../AGENTS.md)
 for the overall architecture.
 
+## Copilot customization in this repository
+
+Repository-scoped Copilot guidance is split by responsibility:
+
+- Shared instructions for both Copilot CLI and GitHub Copilot live in
+  [`.github/copilot-instructions.md`](copilot-instructions.md).
+- Repository custom agents live in [`.github/agents/`](agents/).
+- The `committer` custom agent is intentionally mechanical and
+  manually selected (`disable-model-invocation: true`) so commit scope and
+  wording remain lead-authored decisions.
+
+Custom agents in this repository currently inherit the caller/default model
+instead of pinning a `model` value. This avoids assuming model-selection parity
+across Copilot surfaces. If a future agent pins `model`, document tested
+fallback behavior here and in `copilot-instructions.md`; do not rely on silent
+escalation to a more expensive model.
+
 ## `workflows/lint.yml` — the CI half of "same checks, both places"
 
 There is **no bespoke CI lint logic**. The workflow runs the exact same
@@ -89,3 +106,17 @@ A 7-day `cooldown` delays adopting a just-published version, leaving a window fo
 a compromised or yanked release to be caught upstream. The option and its
 behavior are defined in the
 [Dependabot options reference](https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference#cooldown-).
+
+## Copilot validation checklist (CLI and GitHub Copilot)
+
+When adding or changing `.github/copilot-instructions.md` or
+`.github/agents/*.md`, validate both surfaces:
+
+1. **Discovery**: the agent appears in Copilot CLI and in GitHub Copilot's
+   repository custom-agent picker.
+2. **Invocation**: selecting `committer` actually uses that profile.
+3. **Tool restrictions**: the profile is limited to `execute`, `read`, and
+   `search`.
+4. **Contract behavior**: the agent rejects missing inputs, stops on `git status`
+   mismatches, stages only named paths, commits verbatim, does not add trailers,
+   does not bypass hooks, and never pushes.

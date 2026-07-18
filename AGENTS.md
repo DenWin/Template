@@ -16,17 +16,17 @@ PRs, full at the merge gate.
 
 ## Mechanism map
 
-| Mechanism           | Where                              | Doc                                                                   |
-| ------------------- | ---------------------------------- | --------------------------------------------------------------------- |
-| Orchestration       | `.pre-commit-config.yaml` (root)   | this file + inline comments                                           |
-| Configs             | `.config/`                         | [`.config/README.md`](.config/README.md)                              |
-| Linting & testing   | `.config/scripts/`                 | [`.config/scripts/README.md`](.config/scripts/README.md)              |
-| CI & automation     | `.github/`                         | [`.github/README.md`](.github/README.md)                              |
-| Editor integration  | `.vscode/`                         | [`.vscode/README.md`](.vscode/README.md)                              |
-| Policy rules        | `.config/PSScriptAnalyzerRules/`   | [`.config/scripts/README.md`](.config/scripts/README.md)              |
-| Opt-in tooling      | `.config/overlays/`                | [`.config/overlays/README.md`](.config/overlays/README.md)            |
-| Documentation graph | Markdown/AsciiDoc + README indexes | [`docs/README.adoc`](docs/README.adoc)                                |
-| AI delegation       | `.claude/`, `.codex/`              | [`CLAUDE.md`](CLAUDE.md) + [`.codex/config.toml`](.codex/config.toml) |
+| Mechanism           | Where                                                                                    | Doc                                                                                                              |
+| ------------------- | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Orchestration       | `.pre-commit-config.yaml` (root)                                                         | this file + inline comments                                                                                      |
+| Configs             | `.config/`                                                                               | [`.config/README.md`](.config/README.md)                                                                         |
+| Linting & testing   | `.config/scripts/`                                                                       | [`.config/scripts/README.md`](.config/scripts/README.md)                                                         |
+| CI & automation     | `.github/`                                                                               | [`.github/README.md`](.github/README.md)                                                                         |
+| Editor integration  | `.vscode/`                                                                               | [`.vscode/README.md`](.vscode/README.md)                                                                         |
+| Policy rules        | `.config/PSScriptAnalyzerRules/`                                                         | [`.config/scripts/README.md`](.config/scripts/README.md)                                                         |
+| Opt-in tooling      | `.config/overlays/`                                                                      | [`.config/overlays/README.md`](.config/overlays/README.md)                                                       |
+| Documentation graph | Markdown/AsciiDoc + README indexes                                                       | [`docs/README.adoc`](docs/README.adoc)                                                                           |
+| AI delegation       | `AGENTS.md`, `.claude/`, `.codex/`, `.github/copilot-instructions.md`, `.github/agents/` | [`CLAUDE.md`](CLAUDE.md) + [`.codex/config.toml`](.codex/config.toml) + [`.github/README.md`](.github/README.md) |
 <!-- setup-teardown:template-only:start -->
 | One-time repo setup | `setup/` (delete after use)      | [`setup/README.md`](setup/README.md)                                  |
 | Optional AI skills  | `setup/optional-skills/`         | [`setup/optional-skills/README.adoc`](setup/optional-skills/README.adoc) |
