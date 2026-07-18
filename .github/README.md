@@ -27,8 +27,9 @@ This is the one CI check that is *not* a local pre-commit hook, by design: the
 pre-commit gitleaks hook scans only staged changes (a no-op in CI) and local
 hooks are bypassable, so this server-side scan is the unbypassable backstop over
 the whole history / PR range. It runs the same gitleaks engine, so no lint logic
-is duplicated. Org-owned repos need a free `GITLEAKS_LICENSE` secret; user-owned
-repos do not.
+is duplicated. `GITLEAKS_VERSION` in the workflow is kept in sync with the
+managed hook revision so local and CI findings agree. Org-owned repos need a
+free `GITLEAKS_LICENSE` secret; user-owned repos do not.
 
 ### Protecting the default branch (once per repo)
 

@@ -46,6 +46,8 @@ jobs:
         uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Keep aligned with the managed hook in .pre-commit-config.yaml.
+          GITLEAKS_VERSION: 8.30.0
           # Org accounts need a free GITLEAKS_LICENSE here; user-owned repos do not.
 
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
