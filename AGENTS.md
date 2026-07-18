@@ -16,18 +16,19 @@ PRs, full at the merge gate.
 
 ## Mechanism map
 
-| Mechanism           | Where                            | Doc                                                                  |
-| ------------------- | -------------------------------- | -------------------------------------------------------------------- |
-| Orchestration       | `.pre-commit-config.yaml` (root) | this file + inline comments                                          |
-| Configs             | `.config/`                       | [`.config/README.md`](.config/README.md)                             |
-| Linting & testing   | `.config/scripts/`               | [`.config/scripts/README.md`](.config/scripts/README.md)             |
-| CI & automation     | `.github/`                       | [`.github/README.md`](.github/README.md)                             |
-| Editor integration  | `.vscode/`                       | [`.vscode/README.md`](.vscode/README.md)                             |
-| Policy rules        | `.config/PSScriptAnalyzerRules/` | [`.config/scripts/README.md`](.config/scripts/README.md)             |
-| Opt-in tooling      | `.config/overlays/`              | [`.config/overlays/vale/README.md`](.config/overlays/vale/README.md) |
-| AI delegation       | `.claude/`, `.codex/`            | [`CLAUDE.md`](CLAUDE.md) + tool-specific config                      |
-| One-time repo setup | `setup/` (delete after use)      | [`setup/README.md`](setup/README.md)                                 |
-| Optional AI skills  | `setup/optional-skills/`         | [`setup/README.md`](setup/README.md)                                 |
+| Mechanism           | Where                            | Doc                                                                   |
+| ------------------- | -------------------------------- | --------------------------------------------------------------------- |
+| Orchestration       | `.pre-commit-config.yaml` (root) | this file + inline comments                                           |
+| Configs             | `.config/`                       | [`.config/README.md`](.config/README.md)                              |
+| Linting & testing   | `.config/scripts/`               | [`.config/scripts/README.md`](.config/scripts/README.md)              |
+| CI & automation     | `.github/`                       | [`.github/README.md`](.github/README.md)                              |
+| Editor integration  | `.vscode/`                       | [`.vscode/README.md`](.vscode/README.md)                              |
+| Policy rules        | `.config/PSScriptAnalyzerRules/` | [`.config/scripts/README.md`](.config/scripts/README.md)              |
+| Opt-in tooling      | `.config/overlays/`              | [`.config/overlays/vale/README.md`](.config/overlays/vale/README.md)  |
+| Documentation graph | Markdown docs + README indexes   | [`docs/knowledge-format.md`](docs/knowledge-format.md)                |
+| AI delegation       | `.claude/`, `.codex/`            | [`CLAUDE.md`](CLAUDE.md) + [`.codex/config.toml`](.codex/config.toml) |
+| One-time repo setup | `setup/` (delete after use)      | [`setup/README.md`](setup/README.md)                                  |
+| Optional AI skills  | `setup/optional-skills/`         | [`setup/README.md`](setup/README.md)                                  |
 
 Root convention files are declarative and self-documenting: `.editorconfig`
 (style), `.gitattributes` (eol=lf), `.gitignore`, `.claudeignore`.
@@ -57,6 +58,24 @@ in the repo, or `~/.claude/skills/` for all repos), or follow its `SKILL.md`
 in place. The bundle is deleted with the rest of `setup/` at the end of
 bootstrap — install it *before* running `Complete-Setup.ps1` if you want to
 keep it.
+
+## Documentation relationships
+
+This repo uses a deliberately reduced, non-conformant subset of the draft Open
+Knowledge Format: ordinary Markdown links make related documents discoverable,
+and README indexes provide progressive disclosure without turning each
+consumer repo into a knowledge bundle. The adopted and rejected conventions
+are recorded in
+[`docs/knowledge-format.md`](docs/knowledge-format.md); do not copy the
+upstream draft into this repo.
+
+**Keep the migration runbook connected.** When a change adds, removes, or
+materially changes a permanent mechanism, agent entry point, delegation file,
+documentation convention, or setup step, review
+[`setup/MIGRATION.md`](setup/MIGRATION.md) in the same change. Update it when
+the retrofit steps change; otherwise state in the PR why migration is
+unaffected. This rule lives here because Codex reads `AGENTS.md` directly and
+Claude imports it through `CLAUDE.md`.
 
 ## Reuse: prefer an include over a copy; a symlink only when no include exists
 
