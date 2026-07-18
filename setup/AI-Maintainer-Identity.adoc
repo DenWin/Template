@@ -144,13 +144,36 @@ $env:GH_TOKEN = pwsh -NoProfile -File setup/New-AIMaintainerToken.ps1 `
   -Repository owner/name `
   -PrivateKeyPath ~/.github-apps/my-agent.private-key.pem
 
+$appSlug = 'my-ai-maintainer'
+$botLogin = "${appSlug}[bot]"
+$botId = gh api "users/$botLogin" --jq .id
+git config --local user.name $botLogin
+git config --local user.email "$botId+$botLogin@users.noreply.github.com"
+
 gh auth setup-git
 pwsh -NoProfile -File setup/Test-AIMaintainerIdentity.ps1
+git var GIT_AUTHOR_IDENT
+git var GIT_COMMITTER_IDENT
 ----
 
-Give the agent only this shell. The token is scoped to the named repository and
-is separate from your personal `gh auth login` session. Mint a new one after
-expiry; never persist it in the repository or shell profile.
+Replace `my-ai-maintainer` with the App slug. Repository-local `user.name` and
+`user.email` make local commits identify the App bot; authentication alone does
+not set commit authorship. Git documents that these values populate both author
+and committer fields
+(https://git-scm.com/docs/git-config#Documentation/git-config.txt-username[Git
+configuration]), while `gh auth setup-git` only configures a credential helper
+(https://cli.github.com/manual/gh_auth_setup-git[GitHub CLI manual]). The
+ID-based no-reply address follows GitHub's documented
+`ID+USERNAME@users.noreply.github.com` format
+(https://docs.github.com/en/account-and-profile/reference/email-addresses-reference#your-noreply-email-address[GitHub
+email reference]).
+
+Give the agent only this shell. The token helper first verifies that the supplied
+installation ID belongs to the full `owner/name`, then scopes the token to that
+repository. `Complete-Setup.ps1` also forces its push through HTTPS with the
+credential that passed verification, regardless of the clone's `origin`
+transport. Mint a new token after expiry; never persist it in the repository or
+shell profile.
 
 == Option B — Fine-grained PAT
 

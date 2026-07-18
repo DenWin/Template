@@ -4,6 +4,8 @@
 /.github/                @DenWin
 /.pre-commit-config.yaml @DenWin
 /.config/                @DenWin
-/setup/                  @DenWin # setup-teardown:template-only
+# setup-teardown:template-only:start
+/setup/                  @DenWin
+# setup-teardown:template-only:end
 /AGENTS.md               @DenWin
 /CLAUDE.md               @DenWin

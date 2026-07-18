@@ -37,6 +37,9 @@ records only what changed.
 
 - `Complete-Setup.ps1` now verifies the AI-maintainer identity and removes
   dangling `setup/` references from permanent documents.
+- GitHub App tokens now verify the full repository installation before minting;
+  setup-removal pushes use the checked token over HTTPS, and the temporary
+  `/setup/` CODEOWNERS rule remains valid until teardown removes it.
 - Semgrep and GitHub behavior claims now link to current primary sources and no
   longer present historical Windows or plan constraints as universal.
 

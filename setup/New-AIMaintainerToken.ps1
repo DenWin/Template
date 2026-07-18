@@ -87,6 +87,22 @@ function Get-InstallationAccessToken {
     )
 
     $jwt = Get-GitHubAppJwt -AppId $AppId -PrivateKeyPath $PrivateKeyPath
+    $installationResponse = gh api `
+        -H 'Accept: application/vnd.github+json' `
+        -H "Authorization: Bearer $jwt" `
+        -H 'X-GitHub-Api-Version: 2022-11-28' `
+        "repos/$Repository/installation" 2>$null
+
+    if ($LASTEXITCODE -ne 0 -or -not $installationResponse) {
+        throw "GitHub App installation not found for '$Repository'. Check the App ID, private key, and repository installation."
+    }
+
+    $repositoryInstallationId = ($installationResponse | ConvertFrom-Json).id
+    if (-not $repositoryInstallationId -or
+        [long]$repositoryInstallationId -ne $InstallationId) {
+        throw "Installation ID '$InstallationId' does not belong to repository '$Repository'."
+    }
+
     $repositoryName = ($Repository -split '/', 2)[1]
     $response = gh api --method POST `
         -H 'Accept: application/vnd.github+json' `

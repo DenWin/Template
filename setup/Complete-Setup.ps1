@@ -62,7 +62,8 @@ function Remove-TemplateOnlyDocumentation {
     )
 
     $changed = [System.Collections.Generic.List[string]]::new()
-    $blockPattern = '(?ms)^[ \t]*<!-- setup-teardown:template-only:start -->\r?\n.*?^[ \t]*<!-- setup-teardown:template-only:end -->\r?\n?'
+    $htmlBlockPattern = '(?ms)^[ \t]*<!-- setup-teardown:template-only:start -->\r?\n.*?^[ \t]*<!-- setup-teardown:template-only:end -->\r?\n?'
+    $hashBlockPattern = '(?ms)^[ \t]*# setup-teardown:template-only:start[ \t]*\r?\n.*?^[ \t]*# setup-teardown:template-only:end[ \t]*(?:\r?\n|$)'
     $linePattern = '(?m)^.*(?:<!-- setup-teardown:template-only -->|# setup-teardown:template-only).*(?:\r?\n|$)'
 
     foreach ($relativePath in $RelativePaths) {
@@ -72,7 +73,8 @@ function Remove-TemplateOnlyDocumentation {
         }
 
         $original = [System.IO.File]::ReadAllText($path)
-        $updated = [regex]::Replace($original, $blockPattern, '')
+        $updated = [regex]::Replace($original, $htmlBlockPattern, '')
+        $updated = [regex]::Replace($updated, $hashBlockPattern, '')
         $updated = [regex]::Replace($updated, $linePattern, '')
 
         if ($updated -ne $original -and
@@ -87,6 +89,99 @@ function Remove-TemplateOnlyDocumentation {
     }
 
     $changed
+}
+
+function Invoke-AuthenticatedGitPush {
+    <# Force this push through GitHub HTTPS with the exact token that passed the
+       identity check. Process-scoped Git config avoids putting the token in
+       argv or changing the user's persistent credential helpers. #>
+    param(
+        [Parameter(Mandatory)]
+        [ValidatePattern('^[^/]+/[^/]+$')]
+        [string]$Repository,
+        [Parameter(Mandatory)]
+        [string]$BranchName,
+        [Parameter(Mandatory)]
+        [string]$Token
+    )
+
+    $existingCount = 0
+    if (-not [string]::IsNullOrWhiteSpace($env:GIT_CONFIG_COUNT) -and
+        (-not [int]::TryParse($env:GIT_CONFIG_COUNT, [ref]$existingCount) -or
+        $existingCount -lt 0)) {
+        throw 'GIT_CONFIG_COUNT must be a non-negative integer.'
+    }
+
+    $firstIndex = $existingCount
+    $managedNames = @(
+        'GIT_CONFIG_COUNT',
+        "GIT_CONFIG_KEY_$firstIndex",
+        "GIT_CONFIG_VALUE_$firstIndex",
+        "GIT_CONFIG_KEY_$($firstIndex + 1)",
+        "GIT_CONFIG_VALUE_$($firstIndex + 1)",
+        "GIT_CONFIG_KEY_$($firstIndex + 2)",
+        "GIT_CONFIG_VALUE_$($firstIndex + 2)",
+        'GIT_TERMINAL_PROMPT'
+    )
+    $savedEnvironment = @{}
+    foreach ($name in $managedNames) {
+        $savedEnvironment[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
+    }
+
+    $basicCredential = [Convert]::ToBase64String(
+        [System.Text.Encoding]::ASCII.GetBytes("x-access-token:$Token")
+    )
+
+    try {
+        [Environment]::SetEnvironmentVariable(
+            'GIT_CONFIG_COUNT',
+            ($existingCount + 3).ToString(),
+            'Process'
+        )
+        [Environment]::SetEnvironmentVariable(
+            "GIT_CONFIG_KEY_$firstIndex",
+            'http.https://github.com/.extraHeader',
+            'Process'
+        )
+        [Environment]::SetEnvironmentVariable(
+            "GIT_CONFIG_VALUE_$firstIndex",
+            '',
+            'Process'
+        )
+        [Environment]::SetEnvironmentVariable(
+            "GIT_CONFIG_KEY_$($firstIndex + 1)",
+            'http.https://github.com/.extraHeader',
+            'Process'
+        )
+        [Environment]::SetEnvironmentVariable(
+            "GIT_CONFIG_VALUE_$($firstIndex + 1)",
+            "Authorization: Basic $basicCredential",
+            'Process'
+        )
+        [Environment]::SetEnvironmentVariable(
+            "GIT_CONFIG_KEY_$($firstIndex + 2)",
+            'credential.helper',
+            'Process'
+        )
+        [Environment]::SetEnvironmentVariable(
+            "GIT_CONFIG_VALUE_$($firstIndex + 2)",
+            '',
+            'Process'
+        )
+        [Environment]::SetEnvironmentVariable('GIT_TERMINAL_PROMPT', '0', 'Process')
+
+        git push -u "https://github.com/$Repository.git" $BranchName
+        return $LASTEXITCODE -eq 0
+    }
+    finally {
+        foreach ($name in $managedNames) {
+            [Environment]::SetEnvironmentVariable(
+                $name,
+                $savedEnvironment[$name],
+                'Process'
+            )
+        }
+    }
 }
 
 function Test-RemovalAllowed {
@@ -166,6 +261,12 @@ function Invoke-SetupRemoval {
         return 1
     }
 
+    $pushToken = gh auth token 2>$null
+    if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($pushToken)) {
+        Write-Error 'Could not read the verified GitHub credential for the setup-removal push.'
+        return 1
+    }
+
     git switch -c $BranchName
     if ($LASTEXITCODE -ne 0) {
         Write-Error "Could not create branch '$BranchName' (does it already exist?)."
@@ -197,8 +298,8 @@ function Invoke-SetupRemoval {
         Write-Error 'Commit failed.'
         return 1
     }
-    git push -u origin $BranchName
-    if ($LASTEXITCODE -ne 0) {
+    if (-not (Invoke-AuthenticatedGitPush -Repository $repoInfo.nameWithOwner `
+            -BranchName $BranchName -Token $pushToken)) {
         Write-Error 'Push failed — check your remote and permissions.'
         return 1
     }

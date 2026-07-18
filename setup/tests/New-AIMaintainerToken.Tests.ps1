@@ -50,10 +50,13 @@ Describe 'Get-GitHubAppJwt' -Tag 'Fast' {
 }
 
 Describe 'Get-InstallationAccessToken' -Tag 'Fast' {
-    It 'requests a one-repository installation token without expanding permissions' {
+    It 'verifies the owner/name installation before requesting a one-repository token' {
         Mock Get-GitHubAppJwt { 'signed-jwt' }
         Mock gh {
             $global:LASTEXITCODE = 0
+            if ($args -contains 'repos/owner/repo/installation') {
+                return '{"id":456}'
+            }
             '{"token":"test-installation-token"}'
         }
 
@@ -62,9 +65,33 @@ Describe 'Get-InstallationAccessToken' -Tag 'Fast' {
 
         $token | Should -Be 'test-installation-token'
         Should -Invoke gh -Exactly -Times 1 -ParameterFilter {
+            $args -contains 'repos/owner/repo/installation' -and
+            $args -contains 'Authorization: Bearer signed-jwt'
+        }
+        Should -Invoke gh -Exactly -Times 1 -ParameterFilter {
             $args -contains 'app/installations/456/access_tokens' -and
             $args -contains 'Authorization: Bearer signed-jwt' -and
             $args -contains 'repositories[]=repo'
+        }
+    }
+
+    It 'rejects an installation ID belonging to a different repository owner' {
+        Mock Get-GitHubAppJwt { 'signed-jwt' }
+        Mock gh {
+            $global:LASTEXITCODE = 0
+            if ($args -contains 'repos/org-b/repo/installation') {
+                return '{"id":999}'
+            }
+            '{"token":"wrong-repository-token"}'
+        }
+
+        {
+            Get-InstallationAccessToken -AppId 123 -InstallationId 456 `
+                -Repository 'org-b/repo' -PrivateKeyPath 'unused.pem'
+        } | Should -Throw '*installation*'
+
+        Should -Invoke gh -Exactly -Times 0 -ParameterFilter {
+            $args -contains 'app/installations/456/access_tokens'
         }
     }
 
@@ -79,5 +106,18 @@ Describe 'Get-InstallationAccessToken' -Tag 'Fast' {
             Get-InstallationAccessToken -AppId 123 -InstallationId 456 `
                 -Repository 'owner/repo' -PrivateKeyPath 'unused.pem'
         } | Should -Throw
+    }
+}
+
+Describe 'GitHub App identity instructions' -Tag 'Fast' {
+    It 'sets repository-local bot author and committer identity' {
+        $identityGuide = Get-Content -LiteralPath (
+            Join-Path $PSScriptRoot '..' 'AI-Maintainer-Identity.adoc'
+        ) -Raw
+
+        $identityGuide | Should -Match ([regex]::Escape('git config --local user.name'))
+        $identityGuide | Should -Match ([regex]::Escape('git config --local user.email'))
+        $identityGuide | Should -Match ([regex]::Escape('git var GIT_AUTHOR_IDENT'))
+        $identityGuide | Should -Match ([regex]::Escape('git var GIT_COMMITTER_IDENT'))
     }
 }
