@@ -15,19 +15,19 @@ needed during the migration, so it goes away with the rest of the folder when
 
 ## The concepts you're migrating
 
-| #  | Concept             | Lives in                           | Doc                                                            |
-| -- | ------------------- | ---------------------------------- | -------------------------------------------------------------- |
-| 1  | Orchestration       | `.pre-commit-config.yaml` (root)   | [`/AGENTS.md`](../AGENTS.md) + inline comments                 |
-| 2  | Configs             | `.config/`                         | [`/.config/README.md`](../.config/README.md)                   |
-| 3  | Linting & testing   | `.config/scripts/`                 | [`/.config/scripts/README.md`](../.config/scripts/README.md)   |
-| 4  | Policy rules        | `.config/PSScriptAnalyzerRules/`   | [`/.config/scripts/README.md`](../.config/scripts/README.md)   |
-| 5  | Opt-in tooling      | `.config/overlays/`                | [`/.config/overlays/README.md`](../.config/overlays/README.md) |
-| 6  | CI & automation     | `.github/`                         | [`/.github/README.md`](../.github/README.md)                   |
-| 7  | Editor integration  | `.vscode/`                         | [`/.vscode/README.md`](../.vscode/README.md)                   |
-| 8  | Documentation graph | Markdown/AsciiDoc + README indexes | [`/docs/knowledge-format.md`](../docs/knowledge-format.md)     |
-| 9  | AI delegation       | `AGENTS.md`, `.claude/`, `.codex/` | [`/CLAUDE.md`](../CLAUDE.md) + tool-specific config            |
-| 10 | Optional AI skills  | `setup/optional-skills/`           | [`optional-skills/README.adoc`](optional-skills/README.adoc)   |
-| 11 | One-time repo setup | `setup/` (delete after use)        | [`README.md`](README.md)                                       |
+| #  | Concept             | Lives in                                                                                 | Doc                                                                                               |
+| -- | ------------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| 1  | Orchestration       | `.pre-commit-config.yaml` (root)                                                         | [`/AGENTS.md`](../AGENTS.md) + inline comments                                                    |
+| 2  | Configs             | `.config/`                                                                               | [`/.config/README.md`](../.config/README.md)                                                      |
+| 3  | Linting & testing   | `.config/scripts/`                                                                       | [`/.config/scripts/README.md`](../.config/scripts/README.md)                                      |
+| 4  | Policy rules        | `.config/PSScriptAnalyzerRules/`                                                         | [`/.config/scripts/README.md`](../.config/scripts/README.md)                                      |
+| 5  | Opt-in tooling      | `.config/overlays/`                                                                      | [`/.config/overlays/README.md`](../.config/overlays/README.md)                                    |
+| 6  | CI & automation     | `.github/`                                                                               | [`/.github/README.md`](../.github/README.md)                                                      |
+| 7  | Editor integration  | `.vscode/`                                                                               | [`/.vscode/README.md`](../.vscode/README.md)                                                      |
+| 8  | Documentation graph | Markdown/AsciiDoc + README indexes                                                       | [`/docs/knowledge-format.md`](../docs/knowledge-format.md)                                        |
+| 9  | AI delegation       | `AGENTS.md`, `.claude/`, `.codex/`, `.github/copilot-instructions.md`, `.github/agents/` | [`/CLAUDE.md`](../CLAUDE.md) + tool-specific config + [`.github/README.md`](../.github/README.md) |
+| 10 | Optional AI skills  | `setup/optional-skills/`                                                                 | [`optional-skills/README.adoc`](optional-skills/README.adoc)                                      |
+| 11 | One-time repo setup | `setup/` (delete after use)                                                              | [`README.md`](README.md)                                                                          |
 
 Root convention files provide defaults: `.editorconfig`, `.gitattributes`
 (`eol=lf`), `.gitignore`, and `.claudeignore`. Copy them, then adapt ignore and
@@ -122,17 +122,21 @@ repo's root.
 9. **Adopt the AI entry points and delegation policy** (concept 9). Copy
    `AGENTS.md` as shared repository guidance, then copy only the product
    layers the target uses: `CLAUDE.md` and `.claude/agents/` for Claude Code;
-   `.codex/config.toml` and `.codex/agents/` for Codex. Adapt model names and
-   supported capabilities rather than copying them blindly. Keep
-   shared principles in `AGENTS.md`, but keep product-only model names and
-   mechanics in their product entry points. Claude imports the shared file,
-   while Codex reads it directly and adds its own `developer_instructions`
-   from `.codex/config.toml` in trusted projects. Review
-   [`docs/token-saving.adoc`](../docs/token-saving.adoc) before making
+   `.codex/config.toml` and `.codex/agents/` for Codex; and
+   `.github/copilot-instructions.md` plus `.github/agents/` for Copilot CLI and
+   GitHub Copilot. Adapt model names and supported capabilities rather than
+   copying them blindly. Keep shared principles in `AGENTS.md`, but keep
+   product-only model names and mechanics in product entry points.
+   Claude imports the shared file, while Codex reads it directly and adds its
+   own `developer_instructions` from `.codex/config.toml` in trusted projects.
+   Review [`docs/token-saving.adoc`](../docs/token-saving.adoc) before making
    mechanical commit delegation a default; it usually preserves parent context
-   rather than reducing total tokens.
+   rather than reducing total tokens. For Copilot custom agents, treat explicit
+   `model` pinning as opt-in: validate support in both Copilot CLI and GitHub
+   Copilot, and document fail-fast fallback behavior before pinning.
    *Done when:* every retained product entry point loads the shared guidance,
-   every referenced custom agent exists, and no unused product layer remains.
+   every referenced custom agent exists, Copilot custom agents are discoverable
+   in both Copilot CLI and GitHub Copilot, and no unused product layer remains.
 
 10. **Copy optional AI skills only when needed** (concept 10). Read
     [`optional-skills/README.adoc`](optional-skills/README.adoc), install a

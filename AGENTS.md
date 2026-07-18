@@ -16,17 +16,17 @@ PRs, full at the merge gate.
 
 ## Mechanism map
 
-| Mechanism           | Where                              | Doc                                                                   |
-| ------------------- | ---------------------------------- | --------------------------------------------------------------------- |
-| Orchestration       | `.pre-commit-config.yaml` (root)   | this file + inline comments                                           |
-| Configs             | `.config/`                         | [`.config/README.md`](.config/README.md)                              |
-| Linting & testing   | `.config/scripts/`                 | [`.config/scripts/README.md`](.config/scripts/README.md)              |
-| CI & automation     | `.github/`                         | [`.github/README.md`](.github/README.md)                              |
-| Editor integration  | `.vscode/`                         | [`.vscode/README.md`](.vscode/README.md)                              |
-| Policy rules        | `.config/PSScriptAnalyzerRules/`   | [`.config/scripts/README.md`](.config/scripts/README.md)              |
-| Opt-in tooling      | `.config/overlays/`                | [`.config/overlays/README.md`](.config/overlays/README.md)            |
-| Documentation graph | Markdown/AsciiDoc + README indexes | [`docs/README.adoc`](docs/README.adoc)                                |
-| AI delegation       | `.claude/`, `.codex/`              | [`CLAUDE.md`](CLAUDE.md) + [`.codex/config.toml`](.codex/config.toml) |
+| Mechanism           | Where                                                                                    | Doc                                                                                                              |
+| ------------------- | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Orchestration       | `.pre-commit-config.yaml` (root)                                                         | this file + inline comments                                                                                      |
+| Configs             | `.config/`                                                                               | [`.config/README.md`](.config/README.md)                                                                         |
+| Linting & testing   | `.config/scripts/`                                                                       | [`.config/scripts/README.md`](.config/scripts/README.md)                                                         |
+| CI & automation     | `.github/`                                                                               | [`.github/README.md`](.github/README.md)                                                                         |
+| Editor integration  | `.vscode/`                                                                               | [`.vscode/README.md`](.vscode/README.md)                                                                         |
+| Policy rules        | `.config/PSScriptAnalyzerRules/`                                                         | [`.config/scripts/README.md`](.config/scripts/README.md)                                                         |
+| Opt-in tooling      | `.config/overlays/`                                                                      | [`.config/overlays/README.md`](.config/overlays/README.md)                                                       |
+| Documentation graph | Markdown/AsciiDoc + README indexes                                                       | [`docs/README.adoc`](docs/README.adoc)                                                                           |
+| AI delegation       | `AGENTS.md`, `.claude/`, `.codex/`, `.github/copilot-instructions.md`, `.github/agents/` | [`CLAUDE.md`](CLAUDE.md) + [`.codex/config.toml`](.codex/config.toml) + [`.github/README.md`](.github/README.md) |
 <!-- setup-teardown:template-only:start -->
 | One-time repo setup | `setup/` (delete after use)      | [`setup/README.md`](setup/README.md)                                  |
 | Optional AI skills  | `setup/optional-skills/`         | [`setup/optional-skills/README.adoc`](setup/optional-skills/README.adoc) |
@@ -72,6 +72,24 @@ disclosure without turning each consumer repo into a knowledge bundle. The
 adopted and rejected conventions are recorded in
 [`docs/knowledge-format.md`](docs/knowledge-format.md); do not copy the
 upstream draft into this repo.
+
+## Model-aware delegation for Copilot CLI and GitHub Copilot
+
+Keep the same lead-authors/delegate-executes contract used by Claude and Codex:
+
+- Shared Copilot policy lives in [`.github/copilot-instructions.md`](.github/copilot-instructions.md),
+  which both Copilot CLI and GitHub Copilot load.
+- Repository custom agents live in [`.github/agents/`](.github/agents/).
+  The `committer` agent is mechanical-only: it requires a lead-authored commit
+  message and explicit file list, stages only those paths, and never pushes.
+- Other bounded categories (read-only recon, independent lint/test lanes,
+  boilerplate drafts, research summaries, and mechanical GitHub chores) are
+  defined in the shared Copilot instructions.
+- Repository custom agents currently **inherit** the caller's/default model
+  rather than pinning one: explicit model support differs by surface and must
+  be validated before pinning. If a pinned model is unavailable, fail fast with
+  a visible error and retry with a documented fallback choice — never silently
+  escalate to a more expensive model.
 
 <!-- setup-teardown:template-only:start -->
 **Keep the migration runbook connected.** When a change adds, removes, or
