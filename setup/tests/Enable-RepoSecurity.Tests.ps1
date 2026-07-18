@@ -3,7 +3,7 @@ Set-StrictMode -Version Latest
 
 BeforeAll {
     # Dot-source the SUT: defines its functions; the run guard skips execution.
-    . (Join-Path $PSScriptRoot 'Enable-RepoSecurity.ps1')
+    . (Join-Path $PSScriptRoot '..' 'Enable-RepoSecurity.ps1')
 }
 
 Describe 'Get-SecuritySetting' -Tag 'Fast' {

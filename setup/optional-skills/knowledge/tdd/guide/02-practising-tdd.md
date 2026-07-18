@@ -1,0 +1,319 @@
+# Practising TDD deliberately
+
+Chapter 1 showed one cycle. This chapter turns that outline into a repeatable practice.
+
+The difficult part is rarely writing an assertion. It is choosing the next behavior, obtaining faithful evidence, and taking a step small enough to learn from.
+
+## Start from behavior, not code inventory
+
+Do not begin by listing functions that need tests. Begin with a behavior a caller needs or a rule the system must preserve.
+
+A behavior connects a situation, an action, and observable outcomes. For example: given a discounted subtotal of €50, asking about shipping eligibility returns true.
+
+One behavior does not mean one method, one test class, or one assertion. Several values may need to be checked together to describe one coherent outcome.
+
+For example, accepting an order may return an identifier and record the same identifier in an event. Two assertions can describe that single commitment.
+
+The useful limit is one behavioral decision per cycle. If a failure could mean that several unrelated rules are wrong, split the example.
+
+## Make a provisional test list
+
+Before the first test, list a few examples that might clarify the behavior. For the shipping rule, the list could be:
+
+- exactly €50 qualifies;
+- €49.99 does not qualify;
+- the discounted subtotal determines eligibility;
+- an unsupported currency is rejected.
+
+This is a thinking aid, not a commitment to write the whole suite first. The list will change as each completed cycle reveals more about the requirement and design.
+
+Choose one example that is important, uncertain, and small enough to complete. Leave the remaining items as reminders.
+
+Do not implement all listed tests before production code. Doing so commits to an imagined design and discards the feedback one completed cycle should provide to the next.
+
+## Establish a known baseline
+
+Run the smallest relevant existing test set before adding the example.
+
+If it passes, the new failure can be attributed to the new example. If it fails, record the commands and failures before changing anything.
+
+A pre-existing failure is not the Red for the new behavior. Either restore the baseline or isolate the new work without claiming that an unrelated failure proves anything about it.
+
+On a new project with no tests, the baseline may be a successful build and confirmation that the test runner starts cleanly. This prevents infrastructure problems from masquerading as Red.
+
+## Choose where to observe the behavior
+
+A test needs a route for supplying inputs and observing outcomes. That route is its **observation boundary**.
+
+For the shipping rule, the boundary could be an `Order` method, a pricing component, an HTTP endpoint, or a complete browser checkout.
+
+Choose the narrowest stable boundary that can answer the current question without hiding relevant semantics.
+
+A narrow boundary often gives faster, more diagnostic feedback. A broader boundary is necessary when a database, network, framework, or deployed configuration is part of the risk.
+
+Do not equate “narrow” with “one method.” Several functions or objects may form one coherent unit of behavior.
+
+In legacy-code literature, a **seam** is a place where behavior or a dependency can be varied without editing the code at that point. A seam can make a useful observation boundary controllable.
+
+## Derive the expected result independently
+
+The basis on which a test decides whether behavior is acceptable is its **oracle**.
+
+An oracle is weak when the test calculates its expected result with the same algorithm as production. The same mistake can then appear on both sides and the test will pass.
+
+Prefer evidence independent of the implementation:
+
+- an agreed example from a requirement or domain expert;
+- a known literal such as the €50 boundary;
+- an invariant such as “sorting preserves all input elements”;
+- a trusted reference implementation;
+- a reviewed baseline for complex existing output;
+- a relationship between executions when an exact value is unavailable.
+
+If no reliable oracle exists, exact example-based TDD may not fit the uncertain part of the work. The exception paths later in this chapter explain what to do instead.
+
+## Observe a meaningful Red
+
+Write or revise the smallest example of behavior the system does not yet satisfy, then run it.
+
+Never infer that the test would fail. Human confidence and AI-generated reasoning are not evidence that the test can detect the missing or incorrect behavior.
+
+Observed Red answers the first question about a new test: can it fail before the production code satisfies it?
+
+A meaningful Red is:
+
+- **observed:** the test was actually executed;
+- **reproducible:** the same state produces the same failure;
+- **relevant:** the intended behavior caused the failure;
+- **discriminating:** an important wrong implementation would be detected;
+- **attributable:** the new example or changed expectation explains the failure.
+
+A broken fixture, wrong import, unavailable environment, or unrelated defect is not a behavioral Red. Repair the route to the behavior, return to the known baseline, and run again.
+
+For a defect, reproduce the defect first. Seeing the regression test fail against the current code shows that the test reaches the problem it claims to protect.
+
+### If the new test passes immediately
+
+Do not add production code merely to manufacture a cycle. Investigate why the behavior already appears Green.
+
+The behavior may already exist, another path may satisfy it accidentally, or the assertion may be insensitive. Verify the setup, action, and oracle.
+
+When safe, temporarily remove or perturb the relevant behavior and confirm that the test detects the change. Restore the original baseline afterward.
+
+This sensitivity check does not recreate the design feedback of genuine test-first work.
+
+If the behavior genuinely exists, retain the test only if its regression value justifies its cost. Then select a behavior that is actually missing.
+
+### If the test fails for the wrong reason
+
+Repair the test route or add only the skeletal production structure needed to reach the intended assertion. Do not implement the behavior yet.
+
+Re-establish the baseline and rerun until the failure reaches the intended rule.
+
+Do not count a sequence of infrastructure errors as progress through Red. It proves only that the behavior has not yet been observed.
+
+### If the suite was already failing
+
+Separate the known failure from the new evidence. Record its command and output, fix it when in scope, or use an agreed isolated baseline.
+
+Never present an inherited failure as if the new example exposed it.
+
+## Make the smallest coherent Green
+
+Change only enough production code to satisfy the current example while preserving existing behavior.
+
+Then run the same test and observe it pass. Run nearby relevant tests to make sure the local solution did not violate recorded behavior.
+
+Green must come from satisfying the intended contract. Do not weaken an assertion, skip a test, swallow an error, or silently reinterpret the requirement to obtain it.
+
+Three implementation strategies are useful:
+
+- **Obvious Implementation:** write the general solution directly when it is genuinely clear.
+- **Fake It:** use a narrow result when a working example will help reveal the next step.
+- **Triangulation:** add a contrasting example whose difference creates pressure for a more general rule.
+
+Fake It is a learning strategy, not a ritual. Hard-coding an answer when the correct implementation is obvious adds ceremony without insight.
+
+Triangulation is useful when one example permits several plausible rules. A second example supplies information the first did not.
+
+“Smallest” means the smallest coherent change. It does not require deliberately unreadable code or a solution known to violate an established requirement.
+
+## Refactor only under Green
+
+Green means the demonstrated behavior works. It does not mean the design is finished.
+
+Improve structure while preserving behavior: rename concepts, remove duplication, simplify control flow, move responsibilities, or introduce an abstraction justified by current pressure.
+
+Run relevant tests after each structural step. If they turn Red, restore Green before continuing.
+
+An intentional change in observable behavior is not refactoring. It starts another cycle with a new or revised expectation.
+
+An internal interface may change during refactoring when all callers can change with it. Compatibility of a published interface is observable behavior and must be handled deliberately.
+
+Refactoring is not mandatory motion. If the code already communicates the current design well, continue to the next behavior.
+
+## Select the next example for information
+
+The next test should establish something the current suite does not.
+
+Useful choices include:
+
+- the other side of a boundary;
+- an empty, missing, or malformed input;
+- a competing business rule;
+- a failure observed in production;
+- a state transition that should be rejected;
+- a contrasting example that creates pressure to generalize;
+- an invariant over a wider input space.
+
+Changing €60 to €70 rarely adds information if both values exercise the same rule. Prefer examples that distinguish plausible implementations.
+
+Finish the current cycle at Green before beginning another behavioral decision. Closed cycles keep failures attributable and make interruptions safer.
+
+## Change an existing contract deliberately
+
+Tests are not immutable. When the intended behavior changes, the executable specification must change with it.
+
+Begin from a known Green baseline. Revise or add an expectation that distinguishes the new contract from the old implementation, then run it and observe Red.
+
+A narrowed example of behavior that remains supported may stay Green. Keep it as evidence for the retained contract, but obtain Red from another expectation that the old implementation cannot satisfy.
+
+Change production code until the revised expectation and unaffected behavior are Green. Update documentation, consumers, and broader evidence when compatibility is part of the change.
+
+Sometimes backward compatibility requires adding a new behavior while preserving the old one. That is a product or interface decision, not something a test framework should decide implicitly.
+
+Do not rewrite a failing test merely because production code changed accidentally. Change a test only when the intended contract, evidence, or test design has deliberately changed.
+
+## What deserves a focused test?
+
+Treat testing as a risk decision, not a census of functions.
+
+Strong candidates include:
+
+- business rules and data transformations with meaningful partitions;
+- validation, authorization, money, identity, time, and state transitions;
+- parsers, serializers, calculations, and boundary conversions;
+- concurrency, retry, idempotency, and failure recovery;
+- public contracts between independently changing components;
+- code that changes often or is difficult to diagnose through broader evidence.
+
+Data-transforming functions are good candidates because their inputs and outputs often provide a clear oracle. They are not automatically worth a separate test.
+
+A trivial transformation already exercised through stable public behavior may gain no diagnostic or design value from another test at the function boundary.
+
+Ask whether a focused test would clarify a contract, distinguish meaningful cases, improve diagnosis, or enable safer change. If none applies, broader evidence may be enough.
+
+## What makes a retained test useful?
+
+A useful behavior test normally has these properties:
+
+- **Relevant:** it protects behavior or risk worth maintaining.
+- **Discriminating:** it can fail for an important incorrect implementation.
+- **Readable:** its setup, action, and expected outcome communicate the rule.
+- **Independent:** its oracle does not merely reproduce production logic.
+- **Stable:** structural refactoring does not break it without a behavior change.
+- **Diagnostic:** a failure points to a reasonably small question.
+- **Repeatable:** unchanged code and environment produce the same result.
+- **Economical:** its evidence justifies its runtime and maintenance cost.
+
+No single property proves quality. A fast, readable test of an irrelevant detail is still low value.
+
+## Depend on behavior, not replaceable structure
+
+A durable test depends on behavior at its chosen boundary. It should fail when that behavior changes and remain Green when only replaceable internals change.
+
+Warning signs include assertions on private state, incidental call order, framework query chains, or storage details hidden behind a public retrieval contract.
+
+Interaction assertions are valid when requesting an interaction is itself the contract. A checkout component may need to request a charge exactly once.
+
+That focused test proves only that the request was made. It does not prove that the provider accepted, settled, or reconciled the charge.
+
+The chapters on choosing evidence and collaborative discovery explain how other evidence answers those questions without forcing one test to prove everything.
+
+## Use feedback lanes without weakening Red
+
+Tests created during TDD do not remain a separate species. Once retained, they become part of the project’s verification portfolio.
+
+During a cycle, run the new or revised test and nearby fast tests. Before handing off a change, run the project’s normal relevant suite. Use broader, slower evidence before a suitably risky transition.
+
+If only a slower test through a real dependency or an assembled path can faithfully detect the current risk, that slower test is the correct Red.
+
+Do not replace faithful evidence with an irrelevant focused test merely to make the loop faster. Instead reduce setup, narrow the scenario, improve diagnostics, or create a safe controllable boundary.
+
+The chapter on [choosing evidence and feedback lanes](04-choosing-evidence-and-feedback-lanes.md) develops fast, standard, and thorough execution lanes.
+
+## Keep results trustworthy
+
+A flaky test damages the feedback loop because its failure no longer points reliably to changed behavior. Treat flakiness as a defect, not background noise.
+
+Do not rerun until Green and call that verification. Diagnose shared state, time, environment, concurrency, infrastructure, or oracle problems.
+
+A broad example of stakeholder-visible behavior may guide several focused inner cycles. Keep it branch-local, pending, or outside required gates while it describes unfinished behavior.
+
+At completion, report what was run, what passed, what could not run, and what uncertainty remains. Never claim verification that was not observed.
+
+## Explicit exception paths
+
+The normal Red requirement applies to new behavior and defect corrections. Other kinds of work begin from different evidence states.
+
+### Characterizing legacy behavior
+
+A characterization test records what the system currently does so a risky change can preserve selected behavior. It usually begins Green and does not prove that the behavior is correct.
+
+If no test can run, a minimal behavior-preserving seam may be needed first. After characterization, establish a meaningful Red for the intended change.
+
+### Pure refactoring
+
+Pure refactoring begins Green and remains Green because observable behavior is intentionally unchanged. If behavior must change, begin a new cycle.
+
+### Exploration
+
+A spike or experiment may be needed to discover feasibility, an interface, or an oracle. Keep exploratory code disposable, capture what was learned, then start deliberate development from an explicit behavior.
+
+### No useful executable oracle
+
+Some outcomes require human review, experiments, statistical evaluation, monitoring, or specialist analysis. Apply TDD to deterministic subproblems, but do not pretend an exact assertion proves what it cannot.
+
+The [adjacent-practices appendix](appendices/adjacent-practices-and-further-reading.md) introduces these complementary forms of evidence.
+
+## The operating invariants
+
+For new behavior and defect corrections, preserve these invariants:
+
+1. **Known baseline:** existing relevant results are known before the new example.
+2. **Explicit decision:** one behavior, risk, boundary, and expected outcome are stated.
+3. **Independent oracle:** the expectation is not copied from production reasoning.
+4. **Observed Red:** the test fails reproducibly for the expected behavioral reason.
+5. **Faithful evidence:** the test can detect the risk it claims to address.
+6. **Green integrity:** production satisfies the evidence without weakening it.
+7. **Safe refactoring:** structure changes only while behavior remains Green.
+8. **Trustworthy result:** flaky or unexplained outcomes are not accepted as evidence.
+9. **Closed cycle:** the current behavioral decision returns to Green before the next begins.
+10. **Honest completion:** unrun checks and remaining uncertainty are reported.
+
+These rules protect the meaning of the colors. They are not targets for assertion counts, method coverage, cycle duration, or use of simulated dependencies.
+
+## A compact working loop
+
+For each new behavior or defect correction:
+
+1. State the behavior and why it matters.
+2. Make or revise a provisional test list.
+3. Establish the relevant baseline.
+4. Choose the narrowest boundary faithful to the risk.
+5. Derive the expected result independently.
+6. Add or revise one example and observe meaningful Red.
+7. Make the smallest coherent production change.
+8. Observe Green and run nearby relevant tests.
+9. Refactor without changing observable behavior.
+10. Close the cycle, then choose the next informative example.
+
+The next chapter turns recurring misunderstandings into concrete symptoms and recovery actions.
+
+## Sources and further reading
+
+- Kent Beck, [Canon TDD](https://newsletter.kentbeck.com/p/canon-tdd)
+- Kent Beck, [TDD is Kanban for Code](https://newsletter.kentbeck.com/p/tdd-is-kanban-for-code)
+- Martin Fowler, [Is Changing Interfaces Refactoring?](https://martinfowler.com/bliki/IsChangingInterfacesRefactoring.html)
+- Michael Feathers, *Working Effectively with Legacy Code*
+- Gerard Meszaros, [xUnit Test Patterns](http://xunitpatterns.com/)

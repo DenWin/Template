@@ -1,0 +1,4 @@
+interface:
+  display_name: "Develop with TDD"
+  short_description: "Drive changes through trustworthy TDD cycles"
+  default_prompt: "Use $develop-with-tdd to implement this change one behavior at a time."

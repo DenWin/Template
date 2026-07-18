@@ -18,8 +18,16 @@ Describe 'Test-PowerShellScript' -Tag 'Fast' {
 Describe 'Test-PowerShellScript (PSScriptAnalyzer)' -Tag 'Standard' {
     It 'exits 0 for a clean script' -Skip:(-not $HasPSSA) {
         $f = Join-Path $TestDrive 'clean.ps1'
-        "Write-Output 'hello'" | Set-Content -LiteralPath $f
+        "Set-StrictMode -Version Latest`nWrite-Output 'hello'" | Set-Content -LiteralPath $f
         Invoke-ScriptFile -Path $script:Script -Arguments @($f) | Should -Be 0
+    }
+
+    It 'names the finding count even when there is exactly one finding' -Skip:(-not $HasPSSA) {
+        $f = Join-Path $TestDrive 'one.ps1'
+        "Set-StrictMode -Version Latest`ngci" | Set-Content -LiteralPath $f  # alias -> PSAvoidUsingCmdletAliases (Warning)
+        $output = & pwsh -NoProfile -File $script:Script $f 2>&1 | Out-String
+        $LASTEXITCODE | Should -Be 1
+        $output | Should -Match 'reported \d+ issue'
     }
 
     It 'exits non-zero for a Warning-level violation' -Skip:(-not $HasPSSA) {

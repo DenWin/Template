@@ -37,53 +37,90 @@ Set-StrictMode -Version Latest
 function Test-GhCli { [bool](Get-Command gh -ErrorAction SilentlyContinue) }
 
 function Get-ProtectionRuleset {
-    <# Build the rulesets-API payload (pure; no side effects). #>
+    <# Build the rulesets-API payloads (pure; no side effects) — one ruleset per
+       rule type, posted as separate API calls. GitHub rejects the whole request
+       if ANY rule in a ruleset is invalid for the repo (e.g. 'merge_queue' on a
+       personal/user-owned repo, which only supports it on org-owned repos or
+       Enterprise Cloud) — splitting per-rule means that one incompatible rule
+       can't block the rest of the protections from landing. #>
     param(
         [Parameter(Mandatory)][string]$CheckName,
         [Parameter(Mandatory)][int]$RequiredApprovals,
         [Parameter(Mandatory)][string]$MergeMethod
     )
-    @{
-        name        = 'main-protection'
-        target      = 'branch'
-        enforcement = 'active'
-        conditions  = @{ ref_name = @{ include = @('~DEFAULT_BRANCH'); exclude = @() } }
-        rules       = @(
-            @{ type = 'deletion' }
-            @{ type = 'non_fast_forward' }
-            @{
-                type       = 'pull_request'
-                parameters = @{
-                    required_approving_review_count   = $RequiredApprovals
-                    dismiss_stale_reviews_on_push     = $false
-                    require_code_owner_review         = $false
-                    require_last_push_approval        = $false
-                    # Unresolved review threads block the merge — with auto-merge
-                    # on, a review comment holds an agent PR until it is resolved.
-                    required_review_thread_resolution = $true
+    $target = @{ ref_name = @{ include = @('~DEFAULT_BRANCH'); exclude = @() } }
+    @(
+        @{
+            name        = 'main-protection-deletion'
+            target      = 'branch'
+            enforcement = 'active'
+            conditions  = $target
+            rules       = @(@{ type = 'deletion' })
+        }
+        @{
+            name        = 'main-protection-non-fast-forward'
+            target      = 'branch'
+            enforcement = 'active'
+            conditions  = $target
+            rules       = @(@{ type = 'non_fast_forward' })
+        }
+        @{
+            name        = 'main-protection-pull-request'
+            target      = 'branch'
+            enforcement = 'active'
+            conditions  = $target
+            rules       = @(
+                @{
+                    type       = 'pull_request'
+                    parameters = @{
+                        required_approving_review_count   = $RequiredApprovals
+                        dismiss_stale_reviews_on_push     = $false
+                        require_code_owner_review         = $false
+                        require_last_push_approval        = $false
+                        # Unresolved review threads block the merge — with
+                        # auto-merge on, a review comment holds an agent PR
+                        # until it is resolved.
+                        required_review_thread_resolution = $true
+                    }
                 }
-            }
-            @{
-                type       = 'required_status_checks'
-                parameters = @{
-                    required_status_checks               = @(@{ context = $CheckName })
-                    strict_required_status_checks_policy = $false
+            )
+        }
+        @{
+            name        = 'main-protection-required-status-checks'
+            target      = 'branch'
+            enforcement = 'active'
+            conditions  = $target
+            rules       = @(
+                @{
+                    type       = 'required_status_checks'
+                    parameters = @{
+                        required_status_checks               = @(@{ context = $CheckName })
+                        strict_required_status_checks_policy = $false
+                    }
                 }
-            }
-            @{
-                type       = 'merge_queue'
-                parameters = @{
-                    merge_method                      = $MergeMethod
-                    grouping_strategy                 = 'ALLGREEN'
-                    max_entries_to_build              = 5
-                    min_entries_to_merge              = 1
-                    max_entries_to_merge              = 5
-                    min_entries_to_merge_wait_minutes = 5
-                    check_response_timeout_minutes    = 60
+            )
+        }
+        @{
+            name        = 'main-protection-merge-queue'
+            target      = 'branch'
+            enforcement = 'active'
+            conditions  = $target
+            rules       = @(
+                @{
+                    type       = 'merge_queue'
+                    parameters = @{
+                        merge_method                      = $MergeMethod
+                        grouping_strategy                 = 'ALLGREEN'
+                        max_entries_to_build              = 5
+                        min_entries_to_merge              = 1
+                        max_entries_to_merge              = 5
+                        min_entries_to_merge_wait_minutes = 1
+                        check_response_timeout_minutes    = 60
+                    }
                 }
-            }
-        )
-    }
+            )
+        }
+    )
 }
 
 function Get-StrictLayerRuleset {
@@ -148,12 +185,28 @@ function Invoke-BranchProtection {
         return 1
     }
 
-    $json = Get-ProtectionRuleset -CheckName $CheckName -RequiredApprovals $RequiredApprovals -MergeMethod $MergeMethod |
-        ConvertTo-Json -Depth 8
-    $json | gh api --method POST "repos/$repo/rulesets" --input -
-    if ($LASTEXITCODE -ne 0) {
-        Write-Error 'Failed to create ruleset (it may already exist, or you lack admin on the repo).'
+    $rulesets = Get-ProtectionRuleset -CheckName $CheckName -RequiredApprovals $RequiredApprovals -MergeMethod $MergeMethod
+    $failed = @()
+    foreach ($ruleset in $rulesets) {
+        ($ruleset | ConvertTo-Json -Depth 8) | gh api --method POST "repos/$repo/rulesets" --input - | Out-Null
+        if ($LASTEXITCODE -ne 0) {
+            Write-Warning "Ruleset '$($ruleset.name)' failed (it may already exist, be unsupported on this repo/plan, or you lack admin) — continuing with the rest."
+            $failed += $ruleset.name
+        }
+    }
+    $optionalRulesets = @('main-protection-merge-queue')
+    $requiredFailures = @($failed | Where-Object { $_ -notin $optionalRulesets })
+
+    if ($failed.Count -eq $rulesets.Count) {
+        Write-Error 'All branch-protection rulesets failed; nothing was applied.'
         return 1
+    }
+    if ($requiredFailures.Count -gt 0) {
+        Write-Error "Required branch-protection rulesets failed: $($requiredFailures -join ', ')"
+        return 1
+    }
+    if ($failed.Count -gt 0) {
+        Write-Warning "Branch protection partially applied — skipped: $($failed -join ', ')"
     }
 
     if ($WithStrictLayer) {
