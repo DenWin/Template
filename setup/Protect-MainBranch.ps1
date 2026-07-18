@@ -1,7 +1,7 @@
 #Requires -Version 7.0
 <#
 .SYNOPSIS
-    Protect the default branch with a ruleset (PR + lint check + merge queue,
+    Protect the default branch with a ruleset (PR + Quality gate check + merge queue,
     no force-push/deletion).
 
 .DESCRIPTION
@@ -9,7 +9,7 @@
     folder. Requires the GitHub CLI, authenticated with admin on the repo.
 
 .PARAMETER CheckName
-    Required status-check context (must match the CI job name, lint.yml -> lint).
+    Required status-check context (must match the CI job name, quality-gate.yml -> Quality gate).
 
 .PARAMETER RequiredApprovals
     PR approvals required before merge (0 suits a solo repo).
@@ -25,7 +25,7 @@
 #>
 [CmdletBinding()]
 param(
-    [string]$CheckName = 'lint',
+    [string]$CheckName = 'Quality gate',
     [int]$RequiredApprovals = 0,
     [ValidateSet('MERGE', 'SQUASH', 'REBASE')]
     [string]$MergeMethod = 'SQUASH',

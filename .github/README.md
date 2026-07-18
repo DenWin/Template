@@ -20,7 +20,7 @@ across Copilot surfaces. If a future agent pins `model`, document tested
 fallback behavior here and in `copilot-instructions.md`; do not rely on silent
 escalation to a more expensive model.
 
-## `workflows/lint.yml` — the CI half of "same checks, both places"
+## `workflows/quality-gate.yml` — the CI half of "same checks, both places"
 
 There is **no bespoke CI lint logic**. The workflow runs the exact same
 `pre-commit` hooks a developer runs locally, at two cadences:
@@ -42,7 +42,7 @@ Dependabot updates those SHA pins and version comments
 ([supported ecosystems](https://docs.github.com/en/code-security/reference/supply-chain-security/supported-ecosystems-and-repositories)).
 The `zizmor` pre-commit hook enforces this and other workflow-security rules.
 
-The `lint` job's first step is a **full-history secret scan** (`gitleaks-action`).
+The `Quality gate` job's first step is a **full-history secret scan** (`gitleaks-action`).
 This is the one CI check that is *not* a local pre-commit hook, by design: the
 pre-commit gitleaks hook scans only staged changes (a no-op in CI) and local
 hooks are bypassable, so this server-side scan is the unbypassable backstop over
@@ -57,14 +57,14 @@ do not, per the
 ### Protecting the default branch (once per repo)
 
 The `merge_group` gate only fires if the branch has a **merge-queue ruleset**.
-That ruleset — plus the PR requirement, the required `lint` check, and
+That ruleset — plus the PR requirement, the required `Quality gate` check, and
 force-push/deletion blocks — is applied by the one-time setup tooling:
 
 ```pwsh
 pwsh -NoProfile -File setup/Protect-MainBranch.ps1
 ```
 
-Run it **after** the first push and one CI run (so the `lint` check exists),
+Run it **after** the first push and one CI run (so the `Quality gate` check exists),
 then delete the `setup/` folder. See [`setup/README.md`](../setup/README.md).
 The trigger and ruleset relationship is documented by
 [GitHub's merge-queue guide](https://docs.github.com/en/enterprise-cloud@latest/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-a-merge-queue).

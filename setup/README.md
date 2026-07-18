@@ -42,7 +42,7 @@ pwsh -NoProfile -File setup/Protect-MainBranch.ps1
 ```
 
 Creates a `main-protection` ruleset on the default branch: require a PR, require
-the `lint` check, require review threads resolved, route merges through a merge
+the `Quality gate` check, require review threads resolved, route merges through a merge
 queue, block force-pushes and branch deletion. Also enables auto-merge and
 delete-branch-on-merge on the repo.
 
@@ -56,7 +56,7 @@ In particular, **`merge_queue` only works on org-owned repos** (public or
 private-with-GitHub-Enterprise-Cloud) or Enterprise Cloud generally — GitHub
 rejects it outright on a personal/user-owned repo. The script warns and skips
 it in that case; the other four protections (no force-push, no deletion,
-required PR, required `lint` check) still land.
+required PR, required `Quality gate` check) still land.
 [GitHub documents merge-queue availability and setup requirements](https://docs.github.com/en/enterprise-cloud@latest/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-a-merge-queue).
 
 ## 2. Enable server-side security settings

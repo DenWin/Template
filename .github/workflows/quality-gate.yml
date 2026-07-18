@@ -1,4 +1,4 @@
-name: lint
+name: Quality gate
 
 # The CI half of the "same checks, both places" contract: this runs the exact
 # same pre-commit hooks a developer runs locally. No bespoke lint logic here.
@@ -26,7 +26,7 @@ concurrency:
 
 jobs:
   checks:
-    name: lint # stable status-check name (used by the merge-queue ruleset)
+    name: Quality gate # stable status-check name (used by the merge-queue ruleset)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
