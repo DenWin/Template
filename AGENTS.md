@@ -73,24 +73,6 @@ adopted and rejected conventions are recorded in
 [`docs/knowledge-format.md`](docs/knowledge-format.md); do not copy the
 upstream draft into this repo.
 
-## Model-aware delegation for Copilot CLI and GitHub Copilot
-
-Keep the same lead-authors/delegate-executes contract used by Claude and Codex:
-
-- Shared Copilot policy lives in [`.github/copilot-instructions.md`](.github/copilot-instructions.md),
-  which both Copilot CLI and GitHub Copilot load.
-- Repository custom agents live in [`.github/agents/`](.github/agents/).
-  The `committer` agent is mechanical-only: it requires a lead-authored commit
-  message and explicit file list, stages only those paths, and never pushes.
-- Other bounded categories (read-only recon, independent lint/test lanes,
-  boilerplate drafts, research summaries, and mechanical GitHub chores) are
-  defined in the shared Copilot instructions.
-- Repository custom agents currently **inherit** the caller's/default model
-  rather than pinning one: explicit model support differs by surface and must
-  be validated before pinning. If a pinned model is unavailable, fail fast with
-  a visible error and retry with a documented fallback choice — never silently
-  escalate to a more expensive model.
-
 <!-- setup-teardown:template-only:start -->
 **Keep the migration runbook connected.** When a change adds, removes, or
 materially changes a permanent mechanism, agent entry point, delegation file,
