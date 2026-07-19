@@ -58,27 +58,10 @@ drifted). Git tracks symlinks natively.
 
 ## Retrofit an existing repo
 
-To bring another repo (e.g. one using split per-language workflows and a
-hand-rolled `.githooks/` hook) up to this architecture:
-
-1. **Adopt the orchestrator.** Copy `.pre-commit-config.yaml` and adapt the hook
-   list to the repo's languages. Remove any `core.hooksPath`/`.githooks/` setup —
-   pre-commit replaces it. Don't set `core.hooksPath`; the two conflict.
-2. **Relocate configs** into `.config/`, referenced explicitly via hook `args`
-   (keep root-forced files at root). Factor markdown rules into
-   `markdownlint.jsonc` so the editor and CLI share them.
-3. **Move custom checks into shared scripts.** Any bespoke lint/test logic that
-   lived in CI *and* a local hook becomes one `.config/scripts/*.ps1` invoked as
-   a `repo: local` hook — run identically local and in CI. Delete the duplicate.
-4. **Collapse CI to one workflow** that runs `pre-commit run` (scoped on
-   `pull_request`, full on `merge_group`). Replace N split per-language workflows;
-   path-filtering is no longer needed because pre-commit scopes by file.
-5. **Wire the editor** (`.vscode/settings.json`) and add recommendations.
-6. **Copy the docs** (this file + the per-folder READMEs), trimming to the
-   retrofitted repo's actual tools.
-7. **Purge phantoms.** Verify every tool exists (e.g. there is **no**
-   `asciidoctor-lint` gem — use `asciidoctor --failure-level` for syntax + Vale
-   for prose).
+The step-by-step guide for bringing a repo **not** created from this template
+up to this architecture lives in [`MIGRATION.md`](MIGRATION.md) — the entry
+document that lists every concept, orders the migration (orchestrator first,
+server-side protection last), and links each concept's reference doc.
 
 Anti-pattern this replaces: local hook logic and CI workflows re-implementing
 "the same" checks separately, which drift apart. One orchestrator, one source.

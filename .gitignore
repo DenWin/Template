@@ -12,6 +12,7 @@ desktop.ini
 .vscode/*
 !.vscode/settings.json
 !.vscode/extensions.json
+!.vscode/README.md
 
 # --- transient work (kept out of tracking for now) ----------------------------
 .temp/
