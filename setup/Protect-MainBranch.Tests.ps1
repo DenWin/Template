@@ -33,6 +33,11 @@ Describe 'Get-ProtectionRuleset' -Tag 'Fast' {
         $script:R.rules.type | Should -Contain 'merge_queue'
     }
 
+    It 'waits at most 1 minute before merging queued entries' {
+        ($script:R.rules | Where-Object type -EQ 'merge_queue').parameters.min_entries_to_merge_wait_minutes |
+            Should -Be 1
+    }
+
     It 'requires review threads to be resolved (holds auto-merge on open comments)' {
         ($script:R.rules | Where-Object type -EQ 'pull_request').parameters.required_review_thread_resolution |
             Should -BeTrue

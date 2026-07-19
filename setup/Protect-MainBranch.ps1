@@ -78,7 +78,7 @@ function Get-ProtectionRuleset {
                     max_entries_to_build              = 5
                     min_entries_to_merge              = 1
                     max_entries_to_merge              = 5
-                    min_entries_to_merge_wait_minutes = 5
+                    min_entries_to_merge_wait_minutes = 1
                     check_response_timeout_minutes    = 60
                 }
             }
